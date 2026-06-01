@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LineChart, Briefcase } from "lucide-react";
+import { LineChart, Briefcase, Activity } from "lucide-react";
 
 export default function BottomNav() {
   const pathname = usePathname();
@@ -16,6 +16,14 @@ export default function BottomNav() {
         >
           <LineChart size={24} strokeWidth={pathname === '/' || pathname.startsWith('/watchlist') ? 2.5 : 2} />
           <span className="text-[10px] font-bold">Thị trường</span>
+        </Link>
+        
+        <Link 
+          href="/analysis"
+          className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${pathname.startsWith('/analysis') ? 'text-primary' : 'text-default-500 hover:text-default-800 dark:hover:text-default-300'}`}
+        >
+          <Activity size={24} strokeWidth={pathname.startsWith('/analysis') ? 2.5 : 2} />
+          <span className="text-[10px] font-bold">Phân tích</span>
         </Link>
         
         <Link 
