@@ -244,53 +244,61 @@ export default function StockDetailDrawer({ isOpen, onOpenChange, symbol }: Prop
             <div className="flex h-64 items-center justify-center">
               <div className="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
             </div>
-          ) : overview ? (
+          ) : (
             <div className="flex flex-col gap-6 animate-in slide-in-from-bottom-4 fade-in duration-400">
-              <div className="flex items-end gap-3">
-                <span className={`text-5xl font-black tracking-tighter ${getPriceColor(overview.price, overview.referencePrice, overview.ceilingPrice, overview.floorPrice)}`}>
-                  {(overview.price / 1000).toFixed(2)}
-                </span>
-                <span className={`text-xl font-bold mb-1.5 ${overview.percentChange > 0 ? 'text-emerald-500' : overview.percentChange < 0 ? 'text-red-500' : 'text-warning-500'}`}>
-                  {overview.percentChange > 0 ? '+' : ''}{overview.percentChange}%
-                </span>
-              </div>
+              {overview ? (
+                <>
+                  <div className="flex items-end gap-3">
+                    <span className={`text-5xl font-black tracking-tighter ${getPriceColor(overview.price, overview.referencePrice, overview.ceilingPrice, overview.floorPrice)}`}>
+                      {(overview.price / 1000).toFixed(2)}
+                    </span>
+                    <span className={`text-xl font-bold mb-1.5 ${overview.percentChange > 0 ? 'text-emerald-500' : overview.percentChange < 0 ? 'text-red-500' : 'text-warning-500'}`}>
+                      {overview.percentChange > 0 ? '+' : ''}{overview.percentChange}%
+                    </span>
+                  </div>
 
-              <div className="grid grid-cols-3 gap-3 bg-content2/50 border border-white/5 p-4 rounded-2xl">
-                <div className="flex flex-col">
-                  <span className="text-xs text-default-500 font-medium mb-0.5">Tham chiếu</span>
-                  <span className="text-warning-500 font-bold text-sm">{(overview.referencePrice / 1000).toFixed(2)}</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-xs text-default-500 font-medium mb-0.5">Trần</span>
-                  <span className="text-fuchsia-500 font-bold text-sm">{(overview.ceilingPrice / 1000).toFixed(2)}</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-xs text-default-500 font-medium mb-0.5">Sàn</span>
-                  <span className="text-cyan-500 font-bold text-sm">{(overview.floorPrice / 1000).toFixed(2)}</span>
-                </div>
-                <div className="flex flex-col mt-2">
-                  <span className="text-xs text-default-500 font-medium mb-0.5">KLGD</span>
-                  <span className="font-semibold text-sm">{(overview.volume / 1000).toLocaleString()}K</span>
-                </div>
-                <div className="flex flex-col mt-2">
-                  <span className="text-xs text-default-500 font-medium mb-0.5">P/E</span>
-                  <span className="font-semibold text-sm">{overview.pe || '--'}</span>
-                </div>
-                <div className="flex flex-col mt-2">
-                  <span className="text-xs text-default-500 font-medium mb-0.5">EPS</span>
-                  <span className="font-semibold text-sm">{overview.eps ? overview.eps.toLocaleString() : '--'}</span>
-                </div>
-              </div>
+                  <div className="grid grid-cols-3 gap-3 bg-content2/50 border border-white/5 p-4 rounded-2xl">
+                    <div className="flex flex-col">
+                      <span className="text-xs text-default-500 font-medium mb-0.5">Tham chiếu</span>
+                      <span className="text-warning-500 font-bold text-sm">{(overview.referencePrice / 1000).toFixed(2)}</span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-xs text-default-500 font-medium mb-0.5">Trần</span>
+                      <span className="text-fuchsia-500 font-bold text-sm">{(overview.ceilingPrice / 1000).toFixed(2)}</span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-xs text-default-500 font-medium mb-0.5">Sàn</span>
+                      <span className="text-cyan-500 font-bold text-sm">{(overview.floorPrice / 1000).toFixed(2)}</span>
+                    </div>
+                    <div className="flex flex-col mt-2">
+                      <span className="text-xs text-default-500 font-medium mb-0.5">KLGD</span>
+                      <span className="font-semibold text-sm">{(overview.volume / 1000).toLocaleString()}K</span>
+                    </div>
+                    <div className="flex flex-col mt-2">
+                      <span className="text-xs text-default-500 font-medium mb-0.5">P/E</span>
+                      <span className="font-semibold text-sm">{overview.pe || '--'}</span>
+                    </div>
+                    <div className="flex flex-col mt-2">
+                      <span className="text-xs text-default-500 font-medium mb-0.5">EPS</span>
+                      <span className="font-semibold text-sm">{overview.eps ? overview.eps.toLocaleString() : '--'}</span>
+                    </div>
+                  </div>
 
-              <div className="flex flex-col gap-3">
-                <div className="flex justify-between items-center px-1">
-                  <h3 className="font-bold text-sm text-default-500 tracking-wide">BIỂU ĐỒ GIÁ (1 NĂM)</h3>
+                  <div className="flex flex-col gap-3">
+                    <div className="flex justify-between items-center px-1">
+                      <h3 className="font-bold text-sm text-default-500 tracking-wide">BIỂU ĐỒ GIÁ (1 NĂM)</h3>
+                    </div>
+                    <div 
+                      ref={chartContainerRef} 
+                      className="w-full h-[300px] rounded-2xl overflow-hidden border border-black/10 dark:border-white/5 bg-[#12141C]"
+                    />
+                  </div>
+                </>
+              ) : (
+                <div className="bg-danger/10 border border-danger/20 p-4 rounded-2xl">
+                  <p className="text-danger font-medium text-sm">Không thể tải dữ liệu thị trường cho mã này. Tuy nhiên, bạn vẫn có thể thực hiện giao dịch Bán để loại bỏ mã này khỏi Danh mục.</p>
                 </div>
-                <div 
-                  ref={chartContainerRef} 
-                  className="w-full h-[300px] rounded-2xl overflow-hidden border border-black/10 dark:border-white/5 bg-[#12141C]"
-                />
-              </div>
+              )}
 
               {/* Trading UI */}
               <div className="flex flex-col gap-3 mt-2">
@@ -394,8 +402,6 @@ export default function StockDetailDrawer({ isOpen, onOpenChange, symbol }: Prop
                 </button>
               </div>
             </div>
-          ) : (
-            <div className="text-center text-default-500 mt-10">Không tìm thấy dữ liệu</div>
           )}
         </div>
       </div>
