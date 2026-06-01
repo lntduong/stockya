@@ -105,6 +105,17 @@ export default function WatchlistDetail() {
     }
   };
 
+  const symbolsList = watchlist?.symbols ? watchlist.symbols.split(',') : [];
+  const symbolsQuery = symbolsList.join(',');
+
+  const { data: stockDataResponse, isLoading: isStocksLoading } = useSWR(
+    symbolsQuery ? `/api/stock/bulk?symbols=${symbolsQuery}` : null,
+    fetcher,
+    { refreshInterval: 10000 } // Tự động cập nhật 10s/lần
+  );
+
+  const stockDataDict = stockDataResponse?.data || {};
+
   if (loading) {
     return (
       <div className="flex flex-col gap-6 animate-in fade-in">
@@ -134,17 +145,6 @@ export default function WatchlistDetail() {
       </div>
     );
   }
-
-  const symbolsList = watchlist.symbols ? watchlist.symbols.split(',') : [];
-  const symbolsQuery = symbolsList.join(',');
-
-  const { data: stockDataResponse, isLoading: isStocksLoading } = useSWR(
-    symbolsQuery ? `/api/stock/bulk?symbols=${symbolsQuery}` : null,
-    fetcher,
-    { refreshInterval: 10000 } // Tự động cập nhật 10s/lần
-  );
-
-  const stockDataDict = stockDataResponse?.data || {};
 
   return (
     <div className="flex flex-col gap-6 animate-in slide-in-from-right-4 fade-in duration-300">
