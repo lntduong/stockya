@@ -15,9 +15,12 @@ export async function GET(request: Request) {
   try {
     const analysisPromises = symbols.map(async (symbol) => {
       try {
+        const endDate = new Date().toISOString().split('T')[0];
+        const startDate = new Date(Date.now() - 6 * 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        
         const [overviewRes, historyRes] = await Promise.all([
           getStockOverview(symbol),
-          getStockHistory(symbol)
+          getStockHistory(symbol, startDate, endDate)
         ]);
         
         // Yahoo Finance history prices are in plain format (no need to /1000 for relative calculation, but we need consistency)
