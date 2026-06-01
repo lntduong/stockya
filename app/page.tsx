@@ -1,65 +1,148 @@
-import Image from "next/image";
+"use client";
+
+import { useEffect, useState } from "react";
+import { Plus, Trash2, ChevronRight, LayoutList } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
+  const [watchlists, setWatchlists] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+  
+  const [isOpen, setIsOpen] = useState(false);
+  const [newName, setNewName] = useState("");
+
+  const fetchWatchlists = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/sheets');
+      if (res.ok) {
+        const json = await res.json();
+        setWatchlists(json.data || []);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchWatchlists();
+  }, []);
+
+  const handleCreate = async () => {
+    if (!newName.trim()) return;
+    try {
+      await fetch('/api/sheets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newName.trim() })
+      });
+      setNewName("");
+      setIsOpen(false);
+      fetchWatchlists();
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleDelete = async (id: string, e: any) => {
+    e.stopPropagation();
+    if (confirm("Bạn có chắc chắn muốn xóa danh mục này?")) {
+      try {
+        await fetch(`/api/sheets?id=${id}`, { method: 'DELETE' });
+        fetchWatchlists();
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="flex flex-col gap-6 animate-in fade-in duration-500">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-extrabold tracking-tight">Danh mục</h1>
+          <p className="text-sm text-default-500">Quản lý theo dõi cổ phiếu</p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+        <button 
+          onClick={() => setIsOpen(true)} 
+          className="bg-primary text-white p-3 rounded-full shadow-lg shadow-primary/40 hover:opacity-80 transition-opacity"
+        >
+          <Plus size={24} />
+        </button>
+      </div>
+
+      <div className="flex flex-col gap-3">
+        {loading ? (
+          <>
+            <div className="h-24 w-full bg-content3/40 animate-pulse rounded-2xl" />
+            <div className="h-24 w-full bg-content3/40 animate-pulse rounded-2xl" />
+          </>
+        ) : watchlists.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 text-default-400 gap-4">
+            <LayoutList size={48} className="opacity-20" />
+            <p className="text-center">Chưa có danh mục nào.<br/>Hãy tạo danh mục đầu tiên của bạn!</p>
+          </div>
+        ) : (
+          watchlists.map(wl => (
+            <div 
+              key={wl.id} 
+              onClick={() => router.push(`/watchlist/${wl.id}`)}
+              className="w-full bg-content2/50 backdrop-blur-sm border border-white/5 hover:bg-content2 hover:scale-[1.01] transition-all rounded-2xl cursor-pointer p-5 flex flex-row justify-between items-center shadow-sm"
+            >
+              <div className="flex flex-col items-start">
+                <p className="text-lg font-bold">{wl.name}</p>
+                <p className="text-sm text-default-400 font-medium">
+                  {wl.symbols ? wl.symbols.split(',').length : 0} mã cổ phiếu
+                </p>
+              </div>
+              <div className="flex items-center gap-1">
+                <button 
+                  className="p-2 text-danger opacity-60 hover:opacity-100 hover:bg-danger/10 rounded-full transition-all"
+                  onClick={(e) => handleDelete(wl.id, e)}
+                >
+                  <Trash2 size={18} />
+                </button>
+                <ChevronRight size={20} className="text-default-300 ml-1" />
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {isOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-background w-full max-w-sm rounded-2xl p-6 shadow-2xl border border-white/10 animate-in zoom-in-95">
+            <h2 className="text-xl font-bold mb-4">Tạo danh mục mới</h2>
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-medium text-default-500">Tên danh mục</label>
+              <input 
+                autoFocus
+                className="w-full bg-content2 border border-white/10 rounded-xl px-4 py-3 text-lg outline-none focus:border-primary transition-colors"
+                placeholder="Ví dụ: Lướt sóng T+"
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
+              />
+            </div>
+            <div className="flex justify-end gap-2 mt-6">
+              <button 
+                className="px-4 py-2 rounded-xl text-danger hover:bg-danger/10 font-medium transition-colors"
+                onClick={() => setIsOpen(false)}
+              >
+                Hủy
+              </button>
+              <button 
+                className="px-4 py-2 rounded-xl bg-primary text-white font-semibold shadow-md hover:opacity-90 transition-opacity"
+                onClick={handleCreate}
+              >
+                Tạo mới
+              </button>
+            </div>
+          </div>
         </div>
-      </main>
+      )}
     </div>
   );
 }
