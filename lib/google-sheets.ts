@@ -14,6 +14,12 @@ export interface StockAlert {
   telegramChatId: string;
 }
 
+export interface PortfolioItem {
+  symbol: string;
+  quantity: number;
+  averagePrice: number;
+}
+
 // Cấu hình xác thực Google API
 const privateKey = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n') || '';
 
@@ -188,5 +194,56 @@ export async function getAllActiveAlerts(): Promise<StockAlert[]> {
   } catch (error) {
     console.error('Lỗi khi lấy toàn bộ alerts:', error);
     return [];
+  }
+}
+
+export async function getPortfolio(): Promise<PortfolioItem[]> {
+  if (!sheets || !spreadsheetId) return [];
+  try {
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range: 'Portfolio!A2:C',
+    });
+    
+    const rows = response.data.values;
+    if (!rows) return [];
+    
+    return rows.map((row: any[]) => ({
+      symbol: row[0],
+      quantity: parseInt(row[1]) || 0,
+      averagePrice: parseFloat(row[2]) || 0,
+    })).filter(i => i.quantity > 0);
+  } catch (error) {
+    console.warn('Không đọc được tab Portfolio. Bạn đã tạo tab này chưa?');
+    return [];
+  }
+}
+
+export async function savePortfolio(items: PortfolioItem[]): Promise<void> {
+  if (!sheets || !spreadsheetId) throw new Error('Google Sheets Credentials or Spreadsheet ID not found.');
+  
+  const values = items.map(item => [
+    item.symbol, 
+    item.quantity.toString(), 
+    item.averagePrice.toString()
+  ]);
+  
+  try {
+    await sheets.spreadsheets.values.clear({
+      spreadsheetId,
+      range: 'Portfolio!A2:C',
+    });
+    
+    if (values.length > 0) {
+      await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: 'Portfolio!A2:C',
+        valueInputOption: 'USER_ENTERED',
+        requestBody: { values },
+      });
+    }
+  } catch (error) {
+    console.error('Lỗi khi ghi tab Portfolio:', error);
+    throw new Error('Failed to save portfolio');
   }
 }

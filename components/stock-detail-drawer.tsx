@@ -24,6 +24,13 @@ export default function StockDetailDrawer({ isOpen, onOpenChange, symbol }: Prop
   const [savingAlert, setSavingAlert] = useState(false);
   const [alertSuccess, setAlertSuccess] = useState(false);
 
+  // Trade states
+  const [tradeQuantity, setTradeQuantity] = useState("");
+  const [tradePrice, setTradePrice] = useState("");
+  const [tradeAction, setTradeAction] = useState<"BUY" | "SELL">("BUY");
+  const [trading, setTrading] = useState(false);
+  const [tradeSuccess, setTradeSuccess] = useState(false);
+
   useEffect(() => {
     if (!isOpen || !symbol) return;
     
@@ -50,6 +57,11 @@ export default function StockDetailDrawer({ isOpen, onOpenChange, symbol }: Prop
         if (isMounted) {
           setOverview(overviewJson.data);
           setHistory(historyJson.data || []);
+          
+          if (overviewJson.data) {
+             setTradePrice((overviewJson.data.price / 1000).toFixed(2).toString());
+          }
+          
           if (alertJson.data) {
              setMinPrice(alertJson.data.minPrice ? (alertJson.data.minPrice / 1000).toString() : "");
              setMaxPrice(alertJson.data.maxPrice ? (alertJson.data.maxPrice / 1000).toString() : "");
@@ -130,6 +142,40 @@ export default function StockDetailDrawer({ isOpen, onOpenChange, symbol }: Prop
       chart.remove();
     };
   }, [history, loading]);
+
+  const handleTrade = async () => {
+    if (!symbol || !tradeQuantity || !tradePrice) return;
+    setTrading(true);
+    setTradeSuccess(false);
+    
+    const qty = parseInt(tradeQuantity);
+    const prc = parseFloat(tradePrice) * 1000;
+    const qtyChange = tradeAction === "BUY" ? qty : -qty;
+
+    try {
+      const res = await fetch('/api/portfolio/transaction', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          symbol,
+          quantityChange: qtyChange,
+          price: prc
+        })
+      });
+      
+      if (!res.ok) {
+        throw new Error("Lỗi giao dịch");
+      }
+      
+      setTradeSuccess(true);
+      setTradeQuantity("");
+      setTimeout(() => setTradeSuccess(false), 3000);
+    } catch (error) {
+      alert("Lỗi giao dịch! Đảm bảo bạn có Tab Portfolio trên Google Sheets.");
+    } finally {
+      setTrading(false);
+    }
+  };
 
   const handleSaveAlert = async () => {
     if (!symbol) return;
@@ -244,6 +290,61 @@ export default function StockDetailDrawer({ isOpen, onOpenChange, symbol }: Prop
                   ref={chartContainerRef} 
                   className="w-full h-[300px] rounded-2xl overflow-hidden border border-black/10 dark:border-white/5 bg-[#12141C]"
                 />
+              </div>
+
+              {/* Trading UI */}
+              <div className="flex flex-col gap-3 mt-2">
+                <div className="flex justify-between items-center px-1">
+                  <h3 className="font-bold text-sm text-default-500 tracking-wide">💼 GIAO DỊCH</h3>
+                </div>
+                
+                <div className="bg-content2/50 border border-black/5 dark:border-white/5 p-4 rounded-2xl flex flex-col gap-3">
+                  <div className="flex bg-content3/50 p-1 rounded-xl">
+                    <button 
+                      onClick={() => setTradeAction("BUY")}
+                      className={`flex-1 py-1.5 rounded-lg text-sm font-bold transition-colors ${tradeAction === 'BUY' ? 'bg-emerald-500 text-white shadow-sm' : 'text-default-500'}`}
+                    >
+                      MUA
+                    </button>
+                    <button 
+                      onClick={() => setTradeAction("SELL")}
+                      className={`flex-1 py-1.5 rounded-lg text-sm font-bold transition-colors ${tradeAction === 'SELL' ? 'bg-danger text-white shadow-sm' : 'text-default-500'}`}
+                    >
+                      BÁN
+                    </button>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-3 mt-1">
+                    <div className="flex flex-col gap-1.5">
+                      <span className="text-xs text-default-500 font-medium">Khối lượng</span>
+                      <input 
+                        type="number"
+                        placeholder="VD: 1000"
+                        value={tradeQuantity}
+                        onChange={(e) => setTradeQuantity(e.target.value)}
+                        className="w-full bg-content1 border border-black/10 dark:border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary transition-colors font-bold"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <span className="text-xs text-default-500 font-medium">Giá đặt</span>
+                      <input 
+                        type="number"
+                        placeholder="Giá khớp"
+                        value={tradePrice}
+                        onChange={(e) => setTradePrice(e.target.value)}
+                        className="w-full bg-content1 border border-black/10 dark:border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary transition-colors font-bold"
+                      />
+                    </div>
+                  </div>
+                  
+                  <button 
+                    onClick={handleTrade}
+                    disabled={trading || !tradeQuantity || !tradePrice}
+                    className={`w-full py-2.5 mt-1 rounded-xl font-bold transition-all ${tradeSuccess ? 'bg-primary text-white' : tradeAction === 'BUY' ? 'bg-emerald-500/20 text-emerald-500 hover:bg-emerald-500 hover:text-white' : 'bg-danger/20 text-danger-500 hover:bg-danger hover:text-white'} ${trading ? 'opacity-70 cursor-not-allowed' : ''}`}
+                  >
+                    {trading ? 'Đang xử lý...' : tradeSuccess ? 'Thành công!' : `Xác nhận ${tradeAction === 'BUY' ? 'Mua' : 'Bán'}`}
+                  </button>
+                </div>
               </div>
 
               {/* Alert Settings */}

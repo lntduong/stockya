@@ -2,9 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ChevronLeft, Plus, Search } from "lucide-react";
+import { ChevronLeft, Plus, Search, ArrowUpDown } from "lucide-react";
 import StockRow from "@/components/stock-row";
 import StockDetailDrawer from "@/components/stock-detail-drawer";
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { SortableStockRow } from "@/components/sortable-stock-row";
 
 export default function WatchlistDetail() {
   const params = useParams();
@@ -17,6 +20,11 @@ export default function WatchlistDetail() {
   
   const [isOpen, setIsOpen] = useState(false);
   const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
 
   const fetchWatchlist = async () => {
     const res = await fetch('/api/sheets');
@@ -71,6 +79,27 @@ export default function WatchlistDetail() {
   const openStockDetail = (sym: string) => {
     setSelectedSymbol(sym);
     setIsOpen(true);
+  };
+
+  const handleDragEnd = async (event: any) => {
+    const { active, over } = event;
+    
+    if (active.id !== over?.id && watchlist && over) {
+      const symbolsList = watchlist.symbols ? watchlist.symbols.split(',') : [];
+      const oldIndex = symbolsList.indexOf(active.id);
+      const newIndex = symbolsList.indexOf(over.id);
+      
+      const newSymbolsArray = arrayMove(symbolsList, oldIndex, newIndex);
+      const newSymbols = newSymbolsArray.join(',');
+      
+      setWatchlist({ ...watchlist, symbols: newSymbols });
+      
+      await fetch('/api/sheets', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, symbols: newSymbols })
+      });
+    }
   };
 
   if (loading) {
@@ -145,14 +174,25 @@ export default function WatchlistDetail() {
             <p className="text-sm">Hãy tìm kiếm và thêm cổ phiếu vào đây.</p>
           </div>
         ) : (
-          symbolsList.map((sym: string) => (
-            <StockRow 
-              key={sym} 
-              symbol={sym} 
-              onRemove={handleRemoveSymbol} 
-              onPress={openStockDetail}
-            />
-          ))
+          <DndContext 
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext 
+              items={symbolsList}
+              strategy={verticalListSortingStrategy}
+            >
+              {symbolsList.map((sym: string) => (
+                <SortableStockRow 
+                  key={sym} 
+                  symbol={sym} 
+                  onRemove={handleRemoveSymbol} 
+                  onPress={openStockDetail}
+                />
+              ))}
+            </SortableContext>
+          </DndContext>
         )}
       </div>
 
