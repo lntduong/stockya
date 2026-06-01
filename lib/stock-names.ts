@@ -32,7 +32,7 @@ const STOCK_NAMES: Record<string, { name: string; exchange: string }> = {
   'KDC': { name: 'Tập đoàn Kido', exchange: 'HOSE' },
   'KDH': { name: 'Nhà Khang Điền', exchange: 'HOSE' },
   'KOS': { name: 'Kosy Group', exchange: 'HOSE' },
-  'LPB': { name: 'Ngân hàng LienVietPostBank', exchange: 'HOSE' },
+  'LPB': { name: 'Ngân hàng TMCP Lộc Phát Việt Nam', exchange: 'HOSE' },
   'MBB': { name: 'Ngân hàng Quân đội MB', exchange: 'HOSE' },
   'MSB': { name: 'Ngân hàng MSB', exchange: 'HOSE' },
   'MSN': { name: 'Tập đoàn Masan', exchange: 'HOSE' },
@@ -57,7 +57,7 @@ const STOCK_NAMES: Record<string, { name: string; exchange: string }> = {
   'TCH': { name: 'Hoàng Huy Group', exchange: 'HOSE' },
   'TPB': { name: 'Ngân hàng TPBank', exchange: 'HOSE' },
   'VCB': { name: 'Ngân hàng Vietcombank', exchange: 'HOSE' },
-  'VCI': { name: 'Chứng khoán Bản Việt', exchange: 'HOSE' },
+  'VCI': { name: 'Chứng khoán Vietcap', exchange: 'HOSE' },
   'VGC': { name: 'Viglacera', exchange: 'HOSE' },
   'VHC': { name: 'Vĩnh Hoàn', exchange: 'HOSE' },
   'VHM': { name: 'Vinhomes', exchange: 'HOSE' },
@@ -89,7 +89,7 @@ const STOCK_NAMES: Record<string, { name: string; exchange: string }> = {
   'QNS': { name: 'Đường Quảng Ngãi', exchange: 'UPCOM' },
   'VEA': { name: 'VEAM', exchange: 'UPCOM' },
   'VGI': { name: 'Viettel Global', exchange: 'UPCOM' },
-  'VTP': { name: 'Viettel Post', exchange: 'UPCOM' },
+  'VTP': { name: 'Viettel Post', exchange: 'HOSE' },
 };
 
 /**
