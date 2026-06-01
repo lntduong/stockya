@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
@@ -14,9 +14,25 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+export const viewport: Viewport = {
+  themeColor: "#0a0a0b",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
+
 export const metadata: Metadata = {
-  title: "Stockya - Theo dõi chứng khoán",
-  description: "Ứng dụng theo dõi chứng khoán cá nhân chuẩn Mobile",
+  title: "Stockya",
+  description: "Vietnam Stock Tracker",
+  appleWebApp: {
+    capable: true,
+    title: "Stockya",
+    statusBarStyle: "black-translucent",
+  },
+  formatDetection: {
+    telephone: false,
+  }
 };
 
 export default function RootLayout({
