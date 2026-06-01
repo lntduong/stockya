@@ -6,6 +6,8 @@
 
 const DNSE_BASE = 'https://services.entrade.com.vn/chart-api/v2/ohlcs/stock';
 
+import { getStockName, getStockExchange } from './stock-names';
+
 export interface StockOverview {
   ticker: string;
   price: number;
@@ -83,7 +85,9 @@ export async function getStockOverview(symbol: string): Promise<StockOverview> {
     const change = price - referencePrice;
     const percentChange = referencePrice > 0 ? (change / referencePrice) * 100 : 0;
 
-    const exchange = detectExchange(referencePrice, ceilingPrice);
+    // Lấy tên và sàn giao dịch từ bảng tra cứu tĩnh
+    const knownExchange = getStockExchange(code);
+    const exchange = knownExchange || detectExchange(referencePrice, ceilingPrice);
 
     return {
       ticker: code,
@@ -95,7 +99,7 @@ export async function getStockOverview(symbol: string): Promise<StockOverview> {
       floorPrice,
       pe: 0,
       eps: 0,
-      name: code,
+      name: getStockName(code),
       exchange,
     };
   } catch (error) {
