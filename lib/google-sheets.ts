@@ -212,7 +212,7 @@ export async function getPortfolio(): Promise<PortfolioItem[]> {
       symbol: row[0],
       quantity: parseInt(row[1]) || 0,
       averagePrice: parseFloat(row[2]) || 0,
-    })).filter(i => i.quantity > 0);
+    })).filter((i: PortfolioItem) => i.quantity > 0);
   } catch (error) {
     console.warn('Không đọc được tab Portfolio. Bạn đã tạo tab này chưa?');
     return [];
