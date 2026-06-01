@@ -31,7 +31,25 @@ export default function StockRow({ symbol, onRemove, onPress }: { symbol: string
     return <div className="w-full h-20 rounded-2xl bg-content3/40 animate-pulse" />;
   }
 
-  if (!data) return null;
+  if (!data) {
+    return (
+      <div className="w-full bg-content2/10 backdrop-blur-md border border-danger/20 rounded-2xl p-4 flex flex-row items-center justify-between">
+        <div className="flex-1 min-w-0 opacity-50">
+          <h3 className="font-bold text-base line-through">{symbol}</h3>
+          <p className="text-xs text-danger">Không có dữ liệu (Có thể mã bị hủy niêm yết hoặc sai tên)</p>
+        </div>
+        <button 
+          className="p-2 text-danger opacity-80 hover:opacity-100 hover:bg-danger/10 rounded-full transition-all ml-1 z-10"
+          onClick={(e) => {
+            e.stopPropagation();
+            onRemove(symbol);
+          }}
+        >
+          <Trash2 size={18} />
+        </button>
+      </div>
+    );
+  }
 
   const getPriceColor = (price: number, ref: number, ceil: number, floor: number) => {
     if (price >= ceil) return "text-fuchsia-500";
