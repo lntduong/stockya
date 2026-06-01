@@ -3,6 +3,9 @@
 import { useEffect, useState } from "react";
 import { TrendingUp, Wallet, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import StockDetailDrawer from "@/components/stock-detail-drawer";
+import useSWR from 'swr';
+
+const fetcher = (url: string) => fetch(url).then(res => res.json());
 
 interface PortfolioItem {
   symbol: string;
@@ -29,26 +32,6 @@ export default function PortfolioPage() {
           const portfolioData = json.data as PortfolioItem[];
           setItems(portfolioData);
           setLoading(false);
-          
-          // Fetch real-time prices
-          const updatedItems = await Promise.all(
-            portfolioData.map(async (item) => {
-              try {
-                const stockRes = await fetch(`/api/stock?symbol=${item.symbol}&type=overview`);
-                const stockJson = await stockRes.json();
-                if (stockJson.data) {
-                  return {
-                    ...item,
-                    currentPrice: stockJson.data.price,
-                    name: stockJson.data.name
-                  };
-                }
-              } catch (e) {}
-              return item;
-            })
-          );
-          
-          if (isMounted) setItems(updatedItems);
         }
       } catch (error) {
         console.error("Error fetching portfolio:", error);
@@ -61,8 +44,27 @@ export default function PortfolioPage() {
     return () => { isMounted = false; };
   }, []);
 
-  const totalCost = items.reduce((acc, item) => acc + (item.quantity * item.averagePrice), 0);
-  const currentValue = items.reduce((acc, item) => acc + (item.quantity * (item.currentPrice || item.averagePrice)), 0);
+  const symbolsQuery = items.map(i => i.symbol).join(',');
+
+  const { data: stockDataResponse } = useSWR(
+    symbolsQuery ? `/api/stock/bulk?symbols=${symbolsQuery}` : null,
+    fetcher,
+    { refreshInterval: 10000 } // Tự động làm mới mỗi 10 giây
+  );
+
+  const stockDataDict = stockDataResponse?.data || {};
+
+  const mergedItems = items.map(item => {
+    const stock = stockDataDict[item.symbol];
+    return {
+      ...item,
+      currentPrice: stock ? stock.price : item.currentPrice,
+      name: stock ? stock.name : item.name,
+    };
+  });
+
+  const totalCost = mergedItems.reduce((acc, item) => acc + (item.quantity * item.averagePrice), 0);
+  const currentValue = mergedItems.reduce((acc, item) => acc + (item.quantity * (item.currentPrice || item.averagePrice)), 0);
   const totalPnL = currentValue - totalCost;
   const totalPnLPercent = totalCost > 0 ? (totalPnL / totalCost) * 100 : 0;
 
@@ -104,14 +106,14 @@ export default function PortfolioPage() {
         
         {loading ? (
           <div className="flex justify-center p-10"><div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div></div>
-        ) : items.length === 0 ? (
+        ) : mergedItems.length === 0 ? (
           <div className="text-center p-10 bg-content2/30 rounded-3xl border border-black/5 dark:border-white/5">
             <p className="text-default-500">Chưa có cổ phiếu nào trong danh mục.</p>
             <p className="text-xs text-default-400 mt-2">Hãy mở một mã cổ phiếu và bấm Mua để thêm vào đây.</p>
           </div>
         ) : (
           <div className="flex flex-col gap-3">
-            {items.map((item) => {
+            {mergedItems.map((item) => {
               const currentPrice = item.currentPrice || item.averagePrice;
               const pnl = (currentPrice - item.averagePrice) * item.quantity;
               const pnlPercent = (currentPrice - item.averagePrice) / item.averagePrice * 100;

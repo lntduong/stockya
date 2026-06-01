@@ -4,29 +4,19 @@ import { useEffect, useState } from "react";
 import { Trash2 } from "lucide-react";
 import { StockOverview } from "@/lib/stock-api";
 
-export default function StockRow({ symbol, onRemove, onPress }: { symbol: string, onRemove: (s: string) => void, onPress: (s: string) => void }) {
-  const [data, setData] = useState<StockOverview | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let isMounted = true;
-    fetch(`/api/stock?symbol=${symbol}&type=overview`)
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to load");
-        return res.json();
-      })
-      .then((json) => {
-        if (isMounted) {
-          setData(json.data);
-          setLoading(false);
-        }
-      })
-      .catch(() => {
-        if (isMounted) setLoading(false);
-      });
-    return () => { isMounted = false; };
-  }, [symbol]);
-
+export default function StockRow({ 
+  symbol, 
+  data,
+  loading = false,
+  onRemove, 
+  onPress 
+}: { 
+  symbol: string, 
+  data?: StockOverview | null,
+  loading?: boolean,
+  onRemove: (s: string) => void, 
+  onPress: (s: string) => void 
+}) {
   if (loading) {
     return <div className="w-full h-20 rounded-2xl bg-content3/40 animate-pulse" />;
   }

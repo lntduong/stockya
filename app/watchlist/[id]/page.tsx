@@ -8,6 +8,9 @@ import StockDetailDrawer from "@/components/stock-detail-drawer";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { SortableStockRow } from "@/components/sortable-stock-row";
+import useSWR from 'swr';
+
+const fetcher = (url: string) => fetch(url).then(res => res.json());
 
 export default function WatchlistDetail() {
   const params = useParams();
@@ -133,6 +136,15 @@ export default function WatchlistDetail() {
   }
 
   const symbolsList = watchlist.symbols ? watchlist.symbols.split(',') : [];
+  const symbolsQuery = symbolsList.join(',');
+
+  const { data: stockDataResponse, isLoading: isStocksLoading } = useSWR(
+    symbolsQuery ? `/api/stock/bulk?symbols=${symbolsQuery}` : null,
+    fetcher,
+    { refreshInterval: 10000 } // Tự động cập nhật 10s/lần
+  );
+
+  const stockDataDict = stockDataResponse?.data || {};
 
   return (
     <div className="flex flex-col gap-6 animate-in slide-in-from-right-4 fade-in duration-300">
@@ -187,6 +199,8 @@ export default function WatchlistDetail() {
                 <SortableStockRow 
                   key={sym} 
                   symbol={sym} 
+                  data={stockDataDict[sym]}
+                  loading={isStocksLoading}
                   onRemove={handleRemoveSymbol} 
                   onPress={openStockDetail}
                 />

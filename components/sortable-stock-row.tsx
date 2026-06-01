@@ -4,7 +4,7 @@ import { CSS } from '@dnd-kit/utilities';
 import StockRow from './stock-row';
 import { GripVertical } from 'lucide-react';
 
-export function SortableStockRow({ symbol, onRemove, onPress }: any) {
+export function SortableStockRow({ symbol, data, loading, onRemove, onPress }: any) {
   const {
     attributes,
     listeners,
@@ -31,7 +31,7 @@ export function SortableStockRow({ symbol, onRemove, onPress }: any) {
         <GripVertical size={20} />
       </div>
       <div className="pl-10">
-        <StockRow symbol={symbol} onRemove={onRemove} onPress={onPress} />
+        <StockRow symbol={symbol} data={data} loading={loading} onRemove={onRemove} onPress={onPress} />
       </div>
     </div>
   );
