@@ -21,6 +21,14 @@ export async function GET(request: Request) {
 
     for (const alert of alerts) {
       try {
+        const tenMinutes = 10 * 60 * 1000;
+        const now = Date.now();
+        
+        // Bỏ qua nếu chưa đủ 10 phút kể từ lần báo trước
+        if (alert.lastAlertedAt && now - alert.lastAlertedAt < tenMinutes) {
+          continue;
+        }
+
         const overview = await getStockOverview(alert.symbol);
         const currentPrice = overview.price; // Đã nhân 1000
         
@@ -53,8 +61,8 @@ export async function GET(request: Request) {
           if (!tgResponse.ok) {
             console.error('Failed to send Telegram message', await tgResponse.text());
           } else {
-             // Tắt cảnh báo sau khi đã gửi tin nhắn thành công để tránh spam liên tục
-             await saveAlert({ ...alert, isActive: false });
+             // Cập nhật thời gian gửi thông báo để có thể gửi lại sau 10 phút
+             await saveAlert({ ...alert, lastAlertedAt: Date.now() });
              messagesSent.push(alert.symbol);
           }
         }

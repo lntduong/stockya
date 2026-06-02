@@ -12,6 +12,7 @@ export interface StockAlert {
   maxPrice: number;
   isActive: boolean;
   telegramChatId: string;
+  lastAlertedAt?: number;
 }
 
 export interface PortfolioItem {
@@ -102,7 +103,7 @@ export async function getAlert(symbol: string): Promise<StockAlert | null> {
   try {
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: 'Alerts!A2:E',
+      range: 'Alerts!A2:F',
     });
     
     const rows = response.data.values;
@@ -117,6 +118,7 @@ export async function getAlert(symbol: string): Promise<StockAlert | null> {
       maxPrice: parseFloat(row[2]) || 0,
       isActive: row[3]?.toString().toLowerCase() === 'true',
       telegramChatId: row[4] || '',
+      lastAlertedAt: row[5] ? parseInt(row[5]) : 0,
     };
   } catch (error) {
     console.error('Lỗi khi đọc tab Alerts (Có thể tab chưa được tạo):', error);
@@ -132,7 +134,7 @@ export async function saveAlert(alert: StockAlert): Promise<void> {
     try {
       const response = await sheets.spreadsheets.values.get({
         spreadsheetId,
-        range: 'Alerts!A2:E',
+        range: 'Alerts!A2:F',
       });
       rows = response.data.values || [];
     } catch (e) {
@@ -146,7 +148,8 @@ export async function saveAlert(alert: StockAlert): Promise<void> {
       alert.minPrice.toString(), 
       alert.maxPrice.toString(), 
       alert.isActive ? 'true' : 'false', 
-      alert.telegramChatId
+      alert.telegramChatId,
+      alert.lastAlertedAt ? alert.lastAlertedAt.toString() : '0'
     ];
     
     if (index >= 0) {
@@ -157,13 +160,13 @@ export async function saveAlert(alert: StockAlert): Promise<void> {
     
     await sheets.spreadsheets.values.clear({
       spreadsheetId,
-      range: 'Alerts!A2:E',
+      range: 'Alerts!A2:F',
     });
     
     if (rows.length > 0) {
       await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: 'Alerts!A2:E',
+        range: 'Alerts!A2:F',
         valueInputOption: 'USER_ENTERED',
         requestBody: { values: rows },
       });
@@ -179,7 +182,7 @@ export async function getAllActiveAlerts(): Promise<StockAlert[]> {
   try {
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: 'Alerts!A2:E',
+      range: 'Alerts!A2:F',
     });
     const rows = response.data.values;
     if (!rows) return [];
@@ -190,6 +193,7 @@ export async function getAllActiveAlerts(): Promise<StockAlert[]> {
       maxPrice: parseFloat(row[2]) || 0,
       isActive: true,
       telegramChatId: row[4] || '',
+      lastAlertedAt: row[5] ? parseInt(row[5]) : 0,
     }));
   } catch (error) {
     console.error('Lỗi khi lấy toàn bộ alerts:', error);
