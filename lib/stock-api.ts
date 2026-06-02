@@ -1,10 +1,10 @@
 /**
- * DNSE (Entrade) API - Nguồn dữ liệu chứng khoán Việt Nam
+ * VNDirect DChart API - Nguồn dữ liệu chứng khoán Việt Nam
  * Hỗ trợ toàn bộ 3 sàn: HOSE, HNX, UPCOM
- * Giá trả về theo đơn vị VNĐ gốc (ví dụ: 25750 cho HDB 25.75)
+ * Giá trả về theo đơn vị nghìn đồng (ví dụ: 25.75)
  */
 
-const DNSE_BASE = 'https://services.entrade.com.vn/chart-api/v2/ohlcs/stock';
+const API_BASE = 'https://dchart-api.vndirect.com.vn/dchart/history';
 
 import { getStockName, getStockExchange } from './stock-names';
 
@@ -53,11 +53,11 @@ export async function getStockOverview(symbol: string): Promise<StockOverview> {
     const fiveDaysAgo = now - 7 * 24 * 60 * 60; // Lùi 7 ngày để đảm bảo có ít nhất 2 phiên (qua cuối tuần)
 
     const res = await fetch(
-      `${DNSE_BASE}?resolution=1D&symbol=${code}&from=${fiveDaysAgo}&to=${now}`,
+      `${API_BASE}?resolution=1D&symbol=${code}&from=${fiveDaysAgo}&to=${now}`,
       { next: { revalidate: 10 } }
     );
 
-    if (!res.ok) throw new Error(`DNSE API returned ${res.status}`);
+    if (!res.ok) throw new Error(`VNDirect API returned ${res.status}`);
 
     const json = await res.json();
     const { t, o, h, l, c, v } = json;
@@ -67,7 +67,7 @@ export async function getStockOverview(symbol: string): Promise<StockOverview> {
     }
 
     const lastIdx = t.length - 1;
-    // Giá hiện tại (phiên mới nhất) — DNSE trả về dạng nghìn đồng (VD: 25.75)
+    // Giá hiện tại (phiên mới nhất) — VNDirect trả về dạng nghìn đồng (VD: 25.75)
     const priceInK = c[lastIdx];
     const volumeRaw = v[lastIdx];
 
@@ -104,7 +104,7 @@ export async function getStockOverview(symbol: string): Promise<StockOverview> {
       exchange,
     };
   } catch (error) {
-    console.error(`[DNSE] Failed to fetch overview for ${code}`, error);
+    console.error(`[VNDirect] Failed to fetch overview for ${code}`, error);
     throw new Error(`Failed to fetch stock overview for ${code}`);
   }
 }
@@ -117,11 +117,11 @@ export async function getStockHistory(symbol: string, startDate: string, endDate
     const p2 = Math.floor(new Date(endDate).getTime() / 1000);
 
     const res = await fetch(
-      `${DNSE_BASE}?resolution=1D&symbol=${code}&from=${p1}&to=${p2}`,
+      `${API_BASE}?resolution=1D&symbol=${code}&from=${p1}&to=${p2}`,
       { next: { revalidate: 3600 } }
     );
 
-    if (!res.ok) throw new Error(`DNSE API returned ${res.status}`);
+    if (!res.ok) throw new Error(`VNDirect API returned ${res.status}`);
 
     const json = await res.json();
     const { t, o, h, l, c, v } = json;
@@ -148,7 +148,7 @@ export async function getStockHistory(symbol: string, startDate: string, endDate
 
     return history;
   } catch (error) {
-    console.error(`[DNSE] Failed to fetch history for ${code}`, error);
+    console.error(`[VNDirect] Failed to fetch history for ${code}`, error);
     throw new Error(`Failed to fetch stock history for ${code}`);
   }
 }
