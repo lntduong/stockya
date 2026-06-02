@@ -109,3 +109,15 @@ export function getStockExchange(symbol: string): string | null {
   const code = symbol.toUpperCase();
   return STOCK_NAMES[code]?.exchange || null;
 }
+
+/**
+ * Danh sách 50 mã cổ phiếu có thanh khoản cao nhất / nổi bật nhất trên thị trường.
+ * Dùng cho tính năng Radar Quét Tự Động.
+ */
+export const TOP_50_LIQUID_SYMBOLS = [
+  'FPT', 'HPG', 'SSI', 'VND', 'VHM', 'VIC', 'VCB', 'BID', 'CTG', 'MBB',
+  'TCB', 'VPB', 'STB', 'ACB', 'VIB', 'TPB', 'SHB', 'LPB', 'MSN', 'MWG',
+  'PNJ', 'GAS', 'POW', 'PLX', 'VNM', 'SAB', 'GVR', 'BCM', 'KBC', 'DIG',
+  'DXG', 'NVL', 'PDR', 'NLG', 'KDH', 'VCI', 'HCM', 'SHS', 'VIX', 'HSG',
+  'NKG', 'DGC', 'DPM', 'DCM', 'VHC', 'ANV', 'IDC', 'VGC', 'PVS', 'PVD'
+];
