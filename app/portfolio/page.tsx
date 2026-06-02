@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { TrendingUp, Wallet, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import StockDetailDrawer from "@/components/stock-detail-drawer";
+import { TreemapHeatmap } from "@/components/treemap-heatmap";
 import useSWR from 'swr';
 
 const fetcher = (url: string) => fetch(url).then(res => res.json());
@@ -101,6 +102,23 @@ export default function PortfolioPage() {
         </div>
       </div>
       
+      {mergedItems.length > 0 && (
+        <div className="mb-2">
+          <TreemapHeatmap 
+            data={mergedItems.map(item => {
+              const currentPrice = item.currentPrice || item.averagePrice;
+              const pnlPercent = item.averagePrice > 0 ? (currentPrice - item.averagePrice) / item.averagePrice * 100 : 0;
+              return {
+                symbol: item.symbol,
+                weight: item.quantity * currentPrice,
+                change: pnlPercent
+              };
+            })} 
+            title="Bản đồ Nhiệt Tài sản (Theo Giá trị đầu tư)" 
+          />
+        </div>
+      )}
+
       <div className="flex flex-col gap-3">
         <h3 className="font-bold text-sm text-default-500 tracking-wide px-1">CỔ PHIẾU ĐANG GIỮ</h3>
         

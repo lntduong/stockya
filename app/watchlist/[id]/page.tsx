@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ChevronLeft, Plus, Search, ArrowUpDown } from "lucide-react";
-import StockRow from "@/components/stock-row";
 import StockDetailDrawer from "@/components/stock-detail-drawer";
+import { TreemapHeatmap } from "@/components/treemap-heatmap";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { SortableStockRow } from "@/components/sortable-stock-row";
@@ -177,6 +177,22 @@ export default function WatchlistDetail() {
           <Plus size={24} />
         </button>
       </div>
+
+      {symbolsList.length > 0 && !isStocksLoading && (
+        <div className="mb-2 mt-2">
+          <TreemapHeatmap 
+            data={symbolsList.map((sym: string) => {
+              const stock = stockDataDict[sym];
+              return {
+                symbol: sym,
+                weight: stock ? (stock.volume * stock.price / 1000) : 0,
+                change: stock ? stock.percentChange : 0
+              };
+            }).filter((d: any) => d.weight > 0)}
+            title="Bản đồ Nhiệt Danh mục (Theo Thanh khoản)"
+          />
+        </div>
+      )}
 
       <div className="flex flex-col gap-3">
         {symbolsList.length === 0 ? (
