@@ -5,7 +5,7 @@ import { Activity, TrendingUp, TrendingDown, Minus, AlertTriangle, ShieldCheck }
 
 export default function AnalysisPage() {
   const [tab, setTab] = useState<'portfolio' | 'watchlist'>('portfolio');
-  const [data, setData] = useState<any[]>([]);
+  const [groups, setGroups] = useState<{name: string, items: any[]}[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -13,32 +13,53 @@ export default function AnalysisPage() {
     
     const fetchAnalysis = async () => {
       setLoading(true);
-      setData([]);
+      setGroups([]);
       try {
-        let symbols: string[] = [];
+        let fetchGroups: { name: string, symbols: string[] }[] = [];
+        let allSymbolsToFetch = new Set<string>();
         
         if (tab === 'portfolio') {
           const res = await fetch('/api/portfolio');
           const json = await res.json();
-          symbols = (json.data || []).map((i: any) => i.symbol);
+          const symbols = (json.data || []).map((i: any) => i.symbol);
+          if (symbols.length > 0) {
+            fetchGroups.push({ name: 'Tài sản của tôi', symbols });
+            symbols.forEach((s: string) => allSymbolsToFetch.add(s));
+          }
         } else {
           const res = await fetch('/api/sheets');
           const json = await res.json();
-          const allSymbols = new Set<string>();
           (json.data || []).forEach((wl: any) => {
             if (wl.symbols) {
-              wl.symbols.split(',').forEach((s: string) => allSymbols.add(s));
+              const syms = wl.symbols.split(',').filter(Boolean);
+              if (syms.length > 0) {
+                fetchGroups.push({ name: wl.name, symbols: syms });
+                syms.forEach((s: string) => allSymbolsToFetch.add(s));
+              }
             }
           });
-          symbols = Array.from(allSymbols);
         }
         
-        if (symbols.length > 0) {
-          const analysisRes = await fetch(`/api/analysis?symbols=${symbols.join(',')}`);
+        if (allSymbolsToFetch.size > 0) {
+          const analysisRes = await fetch(`/api/analysis?symbols=${Array.from(allSymbolsToFetch).join(',')}`);
           const analysisJson = await analysisRes.json();
-          if (isMounted) setData(analysisJson.data || []);
+          const analysisData = analysisJson.data || [];
+          
+          // Map array to dictionary by symbol
+          const analysisDict: Record<string, any> = {};
+          analysisData.forEach((item: any) => {
+            analysisDict[item.symbol] = item;
+          });
+          
+          // Construct the final groups
+          const finalGroups = fetchGroups.map(g => ({
+            name: g.name,
+            items: g.symbols.map(s => analysisDict[s]).filter(Boolean)
+          })).filter(g => g.items.length > 0);
+          
+          if (isMounted) setGroups(finalGroups);
         } else {
-          if (isMounted) setData([]);
+          if (isMounted) setGroups([]);
         }
       } catch (error) {
         console.error(error);
@@ -82,86 +103,93 @@ export default function AnalysisPage() {
       <div className="flex flex-col gap-4">
         {loading ? (
           <div className="flex justify-center py-10"><div className="w-8 h-8 border-4 border-fuchsia-500/30 border-t-fuchsia-500 rounded-full animate-spin" /></div>
-        ) : data.length === 0 ? (
+        ) : groups.length === 0 ? (
           <div className="text-center p-10 bg-content2/30 rounded-3xl border border-white/5">
             <p className="text-default-500">Chưa có dữ liệu phân tích.</p>
           </div>
         ) : (
-          data.map((item) => (
-            <div key={item.symbol} className="bg-content2/40 backdrop-blur-md rounded-3xl p-5 border border-white/5 flex flex-col gap-4">
+          groups.map((group, gIndex) => (
+            <div key={gIndex} className="flex flex-col gap-4 mb-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <div className="flex items-center gap-2 px-1">
+                <div className="w-1.5 h-6 bg-fuchsia-500 rounded-full"></div>
+                <h3 className="font-extrabold text-lg tracking-wide">{group.name}</h3>
+                <span className="text-xs bg-content2 text-default-500 font-bold px-2 py-0.5 rounded-full">{group.items.length}</span>
+              </div>
               
-              {/* Header: Symbol & Recommendation Badge */}
-              <div className="flex justify-between items-center border-b border-white/5 pb-3">
-                <div className="flex items-center gap-2">
-                  <h2 className="text-2xl font-black">{item.symbol}</h2>
-                  <span className="text-default-500 font-bold">{(item.currentPrice).toFixed(2)}</span>
-                </div>
-                
-                <div className={`px-3 py-1.5 rounded-lg text-xs font-black tracking-wider ${
-                  item.action === 'BUY_STRONG' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30' : 
-                  item.action === 'BUY' ? 'bg-emerald-500/20 text-emerald-500' :
-                  item.action === 'SELL_STRONG' ? 'bg-danger text-white shadow-lg shadow-danger/30' :
-                  item.action === 'SELL' ? 'bg-danger/20 text-danger-500' :
-                  'bg-default-200 text-default-600'
-                }`}>
-                  {item.action === 'BUY_STRONG' ? '🔥 MUA MẠNH' : 
-                   item.action === 'BUY' ? 'MUA THĂM DÒ' : 
-                   item.action === 'SELL_STRONG' ? '⚠️ BÁN GẤP' : 
-                   item.action === 'SELL' ? 'CANH BÁN' : 'NẮM GIỮ'}
-                </div>
-              </div>
-
-              {/* Trend Analysis */}
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center gap-2">
-                  {item.trend.includes('UP') ? <TrendingUp className="text-emerald-500" size={18} /> : 
-                   item.trend.includes('DOWN') ? <TrendingDown className="text-danger-500" size={18} /> : 
-                   <Minus className="text-default-400" size={18} />}
-                  <span className="font-bold text-sm">Xu hướng: {item.trendText}</span>
-                </div>
-                <p className="text-xs text-default-400 leading-relaxed bg-content1/50 p-3 rounded-xl">
-                  {item.trendDesc} (SMA20: {item.sma20?.toFixed(2)}, SMA50: {item.sma50?.toFixed(2)})
-                </p>
-              </div>
-
-              {/* RSI Analysis */}
-              <div className="flex flex-col gap-2 mt-1">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    {item.rsiState === 'OVERBOUGHT' ? <AlertTriangle className="text-warning-500" size={18} /> : 
-                     item.rsiState === 'OVERSOLD' ? <ShieldCheck className="text-emerald-500" size={18} /> : 
-                     <Activity className="text-default-400" size={18} />}
-                    <span className="font-bold text-sm">RSI Động lượng: {item.rsi?.toFixed(1)}</span>
+              {group.items.map((item) => (
+                <div key={item.symbol} className="bg-content2/40 backdrop-blur-md rounded-3xl p-5 border border-white/5 flex flex-col gap-4">
+                  
+                  {/* Header: Symbol & Recommendation Badge */}
+                  <div className="flex justify-between items-center border-b border-white/5 pb-3">
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-2xl font-black">{item.symbol}</h2>
+                      <span className="text-default-500 font-bold">{(item.currentPrice).toFixed(2)}</span>
+                    </div>
+                    
+                    <div className={`px-3 py-1.5 rounded-lg text-xs font-black tracking-wider ${
+                      item.action === 'BUY_STRONG' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30' : 
+                      item.action === 'BUY' ? 'bg-emerald-500/20 text-emerald-500' :
+                      item.action === 'SELL_STRONG' ? 'bg-danger text-white shadow-lg shadow-danger/30' :
+                      item.action === 'SELL' ? 'bg-danger/20 text-danger-500' :
+                      'bg-default-200 text-default-600'
+                    }`}>
+                      {item.action === 'BUY_STRONG' ? '🔥 MUA MẠNH' : 
+                       item.action === 'BUY' ? 'MUA THĂM DÒ' : 
+                       item.action === 'SELL_STRONG' ? '⚠️ BÁN GẤP' : 
+                       item.action === 'SELL' ? 'CANH BÁN' : 'NẮM GIỮ'}
+                    </div>
                   </div>
-                  <span className={`text-xs font-bold ${
-                    item.rsiState === 'OVERBOUGHT' ? 'text-warning-500' : 
-                    item.rsiState === 'OVERSOLD' ? 'text-emerald-500' : 'text-default-500'
-                  }`}>
-                    {item.rsiText}
-                  </span>
+
+                  {/* Trend Analysis */}
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center gap-2">
+                      {item.trend.includes('UP') ? <TrendingUp className="text-emerald-500" size={18} /> : 
+                       item.trend.includes('DOWN') ? <TrendingDown className="text-danger-500" size={18} /> : 
+                       <Minus className="text-default-400" size={18} />}
+                      <span className="font-bold text-sm">Xu hướng: {item.trendText}</span>
+                    </div>
+                    <p className="text-xs text-default-400 leading-relaxed bg-content1/50 p-3 rounded-xl">
+                      {item.trendDesc} (SMA20: {item.sma20?.toFixed(2)}, SMA50: {item.sma50?.toFixed(2)})
+                    </p>
+                  </div>
+
+                  {/* RSI Analysis */}
+                  <div className="flex flex-col gap-2 mt-1">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        {item.rsiState === 'OVERBOUGHT' ? <AlertTriangle className="text-warning-500" size={18} /> : 
+                         item.rsiState === 'OVERSOLD' ? <ShieldCheck className="text-emerald-500" size={18} /> : 
+                         <Activity className="text-default-400" size={18} />}
+                        <span className="font-bold text-sm">RSI Động lượng: {item.rsi?.toFixed(1)}</span>
+                      </div>
+                      <span className={`text-xs font-bold ${
+                        item.rsiState === 'OVERBOUGHT' ? 'text-warning-500' : 
+                        item.rsiState === 'OVERSOLD' ? 'text-emerald-500' : 'text-default-500'
+                      }`}>
+                        {item.rsiText}
+                      </span>
+                    </div>
+                    
+                    {/* RSI Progress Bar */}
+                    <div className="w-full bg-content1 h-2.5 rounded-full overflow-hidden relative mt-1">
+                      <div className="absolute left-0 top-0 bottom-0 w-[30%] bg-emerald-500/20" />
+                      <div className="absolute right-0 top-0 bottom-0 w-[30%] bg-warning-500/20" />
+                      <div 
+                        className={`absolute top-0 bottom-0 w-2 rounded-full transition-all duration-1000 ${
+                          item.rsiState === 'OVERBOUGHT' ? 'bg-warning-500 shadow-[0_0_8px_rgba(245,165,36,1)]' : 
+                          item.rsiState === 'OVERSOLD' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,1)]' : 'bg-default-500'
+                        }`}
+                        style={{ left: `calc(${Math.min(Math.max(item.rsi || 50, 0), 100)}% - 4px)` }}
+                      />
+                    </div>
+                    
+                    <p className="text-xs text-default-400 leading-relaxed bg-content1/50 p-3 rounded-xl mt-1">
+                      {item.rsiDesc}
+                    </p>
+                  </div>
+                  
                 </div>
-                
-                {/* RSI Progress Bar */}
-                <div className="w-full bg-content1 h-2.5 rounded-full overflow-hidden relative mt-1">
-                  {/* Quá bán (0-30) */}
-                  <div className="absolute left-0 top-0 bottom-0 w-[30%] bg-emerald-500/20" />
-                  {/* Quá mua (70-100) */}
-                  <div className="absolute right-0 top-0 bottom-0 w-[30%] bg-warning-500/20" />
-                  {/* RSI Value Indicator */}
-                  <div 
-                    className={`absolute top-0 bottom-0 w-2 rounded-full transition-all duration-1000 ${
-                      item.rsiState === 'OVERBOUGHT' ? 'bg-warning-500 shadow-[0_0_8px_rgba(245,165,36,1)]' : 
-                      item.rsiState === 'OVERSOLD' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,1)]' : 'bg-default-500'
-                    }`}
-                    style={{ left: `calc(${Math.min(Math.max(item.rsi || 50, 0), 100)}% - 4px)` }}
-                  />
-                </div>
-                
-                <p className="text-xs text-default-400 leading-relaxed bg-content1/50 p-3 rounded-xl mt-1">
-                  {item.rsiDesc}
-                </p>
-              </div>
-              
+              ))}
             </div>
           ))
         )}
