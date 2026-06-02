@@ -140,8 +140,32 @@ export default function AnalysisPage() {
                     </div>
                   </div>
 
-                  {/* Trend Analysis */}
-                  <div className="flex flex-col gap-2">
+                  {/* Overall Score */}
+                  <div className="flex flex-col gap-2 pt-1">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-sm text-default-500">Điểm định lượng (Score)</span>
+                      <span className={`font-black text-xl ${
+                        item.score >= 6 ? 'text-emerald-500' :
+                        item.score >= 2 ? 'text-emerald-400' :
+                        item.score >= -1 ? 'text-default-500' :
+                        item.score >= -5 ? 'text-danger-400' : 'text-danger-500'
+                      }`}>{item.score > 0 ? '+' : ''}{item.score}/10</span>
+                    </div>
+                    
+                    {/* Score Progress Bar from -10 to +10 */}
+                    <div className="w-full bg-content1 h-2.5 rounded-full overflow-hidden relative">
+                      <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-white/20 z-10" />
+                      <div 
+                        className={`absolute top-0 bottom-0 transition-all duration-1000 ${
+                          item.score > 0 ? 'bg-emerald-500 left-1/2' : 'bg-danger-500 right-1/2'
+                        }`}
+                        style={{ width: `${Math.abs(item.score) * 5}%`, right: item.score < 0 ? '50%' : 'auto' }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Trend Analysis (SMA) */}
+                  <div className="flex flex-col gap-2 mt-2">
                     <div className="flex items-center gap-2">
                       {item.trend.includes('UP') ? <TrendingUp className="text-emerald-500" size={18} /> : 
                        item.trend.includes('DOWN') ? <TrendingDown className="text-danger-500" size={18} /> : 
@@ -153,41 +177,41 @@ export default function AnalysisPage() {
                     </p>
                   </div>
 
-                  {/* RSI Analysis */}
-                  <div className="flex flex-col gap-2 mt-1">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        {item.rsiState === 'OVERBOUGHT' ? <AlertTriangle className="text-warning-500" size={18} /> : 
-                         item.rsiState === 'OVERSOLD' ? <ShieldCheck className="text-emerald-500" size={18} /> : 
-                         <Activity className="text-default-400" size={18} />}
-                        <span className="font-bold text-sm">RSI Động lượng: {item.rsi?.toFixed(1)}</span>
-                      </div>
-                      <span className={`text-xs font-bold ${
-                        item.rsiState === 'OVERBOUGHT' ? 'text-warning-500' : 
-                        item.rsiState === 'OVERSOLD' ? 'text-emerald-500' : 'text-default-500'
-                      }`}>
-                        {item.rsiText}
-                      </span>
+                  {/* Technical Indicators Grid */}
+                  <div className="grid grid-cols-2 gap-2 mt-1">
+                    <div className="bg-content1/50 rounded-xl p-3 flex flex-col gap-1">
+                      <span className="text-[10px] font-bold text-default-400 uppercase tracking-wider">MACD Động lượng</span>
+                      <span className={`text-sm font-bold ${
+                        item.macdState === 'BULLISH' ? 'text-emerald-500' : 
+                        item.macdState === 'BEARISH' ? 'text-danger-500' : 'text-default-500'
+                      }`}>{item.macdText}</span>
                     </div>
                     
-                    {/* RSI Progress Bar */}
-                    <div className="w-full bg-content1 h-2.5 rounded-full overflow-hidden relative mt-1">
-                      <div className="absolute left-0 top-0 bottom-0 w-[30%] bg-emerald-500/20" />
-                      <div className="absolute right-0 top-0 bottom-0 w-[30%] bg-warning-500/20" />
-                      <div 
-                        className={`absolute top-0 bottom-0 w-2 rounded-full transition-all duration-1000 ${
-                          item.rsiState === 'OVERBOUGHT' ? 'bg-warning-500 shadow-[0_0_8px_rgba(245,165,36,1)]' : 
-                          item.rsiState === 'OVERSOLD' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,1)]' : 'bg-default-500'
-                        }`}
-                        style={{ left: `calc(${Math.min(Math.max(item.rsi || 50, 0), 100)}% - 4px)` }}
-                      />
+                    <div className="bg-content1/50 rounded-xl p-3 flex flex-col gap-1">
+                      <span className="text-[10px] font-bold text-default-400 uppercase tracking-wider">Bollinger Bands</span>
+                      <span className={`text-sm font-bold ${
+                        item.bbState === 'LOWER_BAND' ? 'text-emerald-500' : 
+                        item.bbState === 'UPPER_BAND' ? 'text-danger-500' : 'text-default-500'
+                      }`}>{item.bbText}</span>
                     </div>
                     
-                    <p className="text-xs text-default-400 leading-relaxed bg-content1/50 p-3 rounded-xl mt-1">
-                      {item.rsiDesc}
-                    </p>
-                  </div>
-                  
+                    <div className="bg-content1/50 rounded-xl p-3 flex flex-col gap-1">
+                      <span className="text-[10px] font-bold text-default-400 uppercase tracking-wider">VSA Dòng tiền</span>
+                      <span className={`text-sm font-bold ${
+                        item.vsaState === 'ACCUMULATION' ? 'text-emerald-500' : 
+                        item.vsaState === 'DISTRIBUTION' ? 'text-danger-500' : 'text-default-500'
+                      }`}>{item.vsaText}</span>
+                    </div>
+
+                    <div className="bg-content1/50 rounded-xl p-3 flex flex-col gap-1">
+                      <span className="text-[10px] font-bold text-default-400 uppercase tracking-wider">RSI ({item.rsi?.toFixed(0)})</span>
+                      <span className={`text-sm font-bold ${
+                        item.rsiState === 'OVERSOLD' ? 'text-emerald-500' : 
+                        item.rsiState === 'OVERBOUGHT' ? 'text-warning-500' : 'text-default-500'
+                      }`}>{item.rsiText}</span>
+                    </div>
+                  </div>  
+
                 </div>
               ))}
             </div>

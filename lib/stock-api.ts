@@ -28,6 +28,7 @@ export interface StockHistoryData {
   high: number;
   low: number;
   close: number;
+  volume: number;
 }
 
 /**
@@ -123,7 +124,7 @@ export async function getStockHistory(symbol: string, startDate: string, endDate
     if (!res.ok) throw new Error(`DNSE API returned ${res.status}`);
 
     const json = await res.json();
-    const { t, o, h, l, c } = json;
+    const { t, o, h, l, c, v } = json;
 
     if (!t || t.length === 0) {
       throw new Error(`No history data for ${code}`);
@@ -140,6 +141,7 @@ export async function getStockHistory(symbol: string, startDate: string, endDate
           high: Math.round(h[i] * 1000),
           low: Math.round(l[i] * 1000),
           close: Math.round(c[i] * 1000),
+          volume: v[i] || 0,
         });
       }
     }

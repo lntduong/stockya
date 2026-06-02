@@ -23,18 +23,19 @@ export async function GET(request: Request) {
           getStockHistory(symbol, startDate, endDate)
         ]);
         
-        // Yahoo Finance history prices are in plain format (no need to /1000 for relative calculation, but we need consistency)
         // Let's use history directly. history prices need to be scaled if overview is scaled.
         // Actually, getStockHistory returns raw prices.
         const prices = historyRes.map(h => h.close);
+        const volumes = historyRes.map(h => h.volume);
         const currentPriceRaw = overviewRes.price / 1000;
         
         // Ensure historical prices are on the same scale (Yahoo VN stocks are usually in thousands, so 25000)
         // Wait, getStockHistory returns 25000. currentPriceRaw is 25.75 (if divided by 1000).
         // Let's NOT divide overview.price by 1000 for analysis to match history!
         const currentPrice = overviewRes.price; 
+        const currentVolume = overviewRes.volume;
         
-        const result = analyzeTrend(symbol, prices, currentPrice);
+        const result = analyzeTrend(symbol, prices, volumes, currentPrice, currentVolume);
         
         // Format prices back to UI friendly format (divided by 1000)
         return {
