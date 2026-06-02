@@ -142,14 +142,17 @@ export default function AnalysisPage() {
 
                   {/* Overall Score */}
                   <div className="flex flex-col gap-2 pt-1">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between mb-1">
                       <span className="font-bold text-sm text-default-500">Điểm định lượng (Score)</span>
-                      <span className={`font-black text-xl ${
-                        item.score >= 6 ? 'text-emerald-500' :
-                        item.score >= 2 ? 'text-emerald-400' :
-                        item.score >= -1 ? 'text-default-500' :
-                        item.score >= -5 ? 'text-danger-400' : 'text-danger-500'
-                      }`}>{item.score > 0 ? '+' : ''}{item.score}/10</span>
+                      <div className={`px-3 py-0.5 rounded-xl text-lg font-black tracking-wider shadow-sm ${
+                        item.score >= 6 ? 'bg-emerald-500 text-white shadow-emerald-500/30' :
+                        item.score >= 2 ? 'bg-emerald-500/20 text-emerald-500' :
+                        item.score >= -1 ? 'bg-default-200 text-default-600' :
+                        item.score >= -5 ? 'bg-danger/20 text-danger-500' : 
+                        'bg-danger text-white shadow-danger/30'
+                      }`}>
+                        {item.score > 0 ? '+' : ''}{item.score}<span className="text-sm font-bold opacity-60">/10</span>
+                      </div>
                     </div>
                     
                     {/* Score Progress Bar from -10 to +10 */}
