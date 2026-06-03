@@ -20,6 +20,17 @@ export default function StockDetailDrawer({ isOpen, onOpenChange, symbol, symbol
   
   useEffect(() => {
     if (isOpen && symbol) setActiveSymbol(symbol);
+    
+    // Prevent body scrolling when the drawer is open (Native Android feel)
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    
+    return () => {
+      document.body.style.overflow = '';
+    };
   }, [isOpen, symbol]);
 
   const { data: portfolioData } = useSWR(isOpen ? '/api/portfolio' : null, fetcher);
