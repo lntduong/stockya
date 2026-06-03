@@ -1,6 +1,6 @@
 "use client";
 
-import { Trash2 } from "lucide-react";
+import { Trash2, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { getStockName, getStockExchange } from "@/lib/stock-names";
 
 interface CompactStockRowProps {
@@ -98,8 +98,10 @@ export default function CompactStockRow({
 
   const formatPrice = (p: number) => p.toLocaleString('en-US', { maximumFractionDigits: 2 });
   const formatValue = (v: number) => {
-    if (v >= 1000000000) return (v / 1000000000).toLocaleString('en-US', { maximumFractionDigits: 2 }) + ' tỷ';
-    if (v >= 1000000) return (v / 1000000).toLocaleString('en-US', { maximumFractionDigits: 2 }) + ' tr';
+    const absV = Math.abs(v);
+    if (absV >= 1000000000) return (v / 1000000000).toLocaleString('en-US', { maximumFractionDigits: 2 }) + ' tỷ';
+    if (absV >= 1000000) return (v / 1000000).toLocaleString('en-US', { maximumFractionDigits: 2 }) + ' tr';
+    if (absV >= 1000) return (v / 1000).toLocaleString('en-US', { maximumFractionDigits: 0 }) + 'k';
     return v.toLocaleString('en-US', { maximumFractionDigits: 0 });
   };
 
@@ -125,8 +127,8 @@ export default function CompactStockRow({
               <span className="text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded font-bold">
                 {ownedQuantity.toLocaleString()} cổ
               </span>
-              <span className={`text-[10px] font-bold ${pnl > 0 ? 'text-emerald-500' : pnl < 0 ? 'text-danger-500' : 'text-default-500'}`}>
-                {pnl > 0 ? '+' : ''}{pnlPercent.toFixed(1)}%
+              <span className={`text-[10px] font-bold ${isUp ? 'text-emerald-500' : isDown ? 'text-danger' : 'text-default-500'}`}>
+                {isUp ? '+' : ''}{percentChange}%
               </span>
             </div>
             <span className="text-[9px] text-default-500 font-medium px-0.5">
@@ -164,18 +166,30 @@ export default function CompactStockRow({
       </div>
 
       {/* Right: Price & Percent Change */}
-      <div className="flex items-center gap-2 w-24 justify-end">
+      <div className="flex items-center gap-2 w-auto justify-end">
         <div className="flex flex-col items-end">
           <span className={`font-black text-base ${priceColor}`}>
             {formatPrice(currentPriceToUse)}
           </span>
-          <div className={`text-[10px] font-bold px-1.5 rounded-sm mt-0.5 ${
-            isUp ? 'bg-emerald-500/15 text-emerald-500' : 
-            isDown ? 'bg-red-500/15 text-red-500' : 
-            'bg-warning-500/15 text-warning-500'
-          }`}>
-            {isUp ? '+' : ''}{percentChange}%
-          </div>
+          {ownedQuantity && normalizedAveragePrice ? (
+            <div className={`flex items-center gap-0.5 text-[10px] font-bold px-1.5 rounded-sm mt-0.5 ${
+              pnl > 0 ? 'bg-emerald-500/15 text-emerald-500' : 
+              pnl < 0 ? 'bg-danger/15 text-danger' : 
+              'bg-default-500/15 text-default-500'
+            }`}>
+              {pnl > 0 ? <TrendingUp size={10} /> : pnl < 0 ? <TrendingDown size={10} /> : <Minus size={10} />}
+              <span>{pnl > 0 ? '+' : ''}{pnlPercent.toFixed(2)}% ({formatValue(Math.abs(pnl))})</span>
+            </div>
+          ) : (
+            <div className={`flex items-center gap-0.5 text-[10px] font-bold px-1.5 rounded-sm mt-0.5 ${
+              isUp ? 'bg-emerald-500/15 text-emerald-500' : 
+              isDown ? 'bg-danger/15 text-danger' : 
+              'bg-warning-500/15 text-warning-500'
+            }`}>
+              {isUp ? <TrendingUp size={10} /> : isDown ? <TrendingDown size={10} /> : <Minus size={10} />}
+              <span>{isUp ? '+' : ''}{percentChange}%</span>
+            </div>
+          )}
         </div>
         
         {onRemove && (
