@@ -234,7 +234,7 @@ export default function StockDetailPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-32 animate-in fade-in duration-300">
+    <div className="min-h-screen bg-background pb-48 animate-in fade-in duration-300">
       <div className="sticky top-0 bg-background/90 backdrop-blur-xl z-20 px-5 pt-safe border-b border-white/5 flex items-center shadow-sm">
         <button 
           className="p-2.5 -ml-2 mr-3 hover:bg-content2 rounded-full transition-colors"
@@ -452,9 +452,9 @@ export default function StockDetailPage() {
         )}
       </div>
 
-      {/* Portfolio Horizontal List (Sticky at bottom) */}
+      {/* Portfolio Horizontal List (Sticky at bottom, above bottom-nav which is h-16) */}
       {portfolioItems.length > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 bg-content2/95 backdrop-blur-xl border-t border-white/5 pb-safe pt-3 px-4 shadow-[0_-10px_30px_-15px_rgba(0,0,0,0.5)] z-30">
+        <div className="fixed bottom-16 left-0 right-0 bg-content2/95 backdrop-blur-xl border-t border-black/5 dark:border-white/5 pb-3 pt-3 px-4 shadow-[0_-10px_30px_-15px_rgba(0,0,0,0.5)] z-40">
           <h4 className="text-[10px] font-bold text-default-400 uppercase tracking-wider mb-2 px-1">Danh mục của bạn</h4>
           <div className="flex overflow-x-auto gap-3 pb-4 snap-x hide-scrollbar">
             {portfolioItems.map((item: any) => {
