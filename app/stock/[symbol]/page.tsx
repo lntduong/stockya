@@ -355,9 +355,9 @@ export default function StockDetailPage() {
                 
                 <div className="grid grid-cols-2 gap-4 mt-1">
                   <div className="flex flex-col gap-2">
-                    <div className="flex justify-between items-end h-9">
-                      <span className="text-xs text-default-500 font-medium whitespace-nowrap mr-1">Khối lượng</span>
-                      <div className="flex gap-1 flex-wrap justify-end">
+                    <div className="flex flex-col gap-1.5">
+                      <span className="text-xs text-default-500 font-medium">Khối lượng</span>
+                      <div className="flex gap-1 flex-wrap">
                         <button onClick={() => fillQuantity(100)} className="text-[10px] bg-content3 px-2 py-0.5 rounded font-bold text-default-500">100</button>
                         <button onClick={() => fillQuantity(1000)} className="text-[10px] bg-content3 px-2 py-0.5 rounded font-bold text-default-500">1k</button>
                         {tradeAction === 'SELL' && ownedStock && (
@@ -374,9 +374,9 @@ export default function StockDetailPage() {
                     />
                   </div>
                   <div className="flex flex-col gap-2">
-                    <div className="flex justify-between items-end h-9">
-                      <span className="text-xs text-default-500 font-medium whitespace-nowrap mr-1">Giá đặt</span>
-                      <div className="flex gap-1 flex-wrap justify-end">
+                    <div className="flex flex-col gap-1.5">
+                      <span className="text-xs text-default-500 font-medium">Giá đặt</span>
+                      <div className="flex gap-1 flex-wrap">
                         <button onClick={() => fillPrice('floor')} className="text-[10px] bg-cyan-500/10 text-cyan-500 px-2 py-0.5 rounded font-bold">Sàn</button>
                         <button onClick={() => fillPrice('ref')} className="text-[10px] bg-warning-500/10 text-warning-500 px-2 py-0.5 rounded font-bold">Khớp</button>
                         <button onClick={() => fillPrice('ceil')} className="text-[10px] bg-fuchsia-500/10 text-fuchsia-500 px-2 py-0.5 rounded font-bold">Trần</button>
