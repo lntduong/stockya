@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { TrendingUp, Wallet, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { TrendingUp, Wallet, ArrowUpRight, ArrowDownRight, ArrowDown, ArrowUp } from "lucide-react";
 import { TreemapHeatmap } from "@/components/treemap-heatmap";
 import CompactStockRow from "@/components/compact-stock-row";
 import PullToRefresh from "@/components/pull-to-refresh";
@@ -22,6 +22,7 @@ export default function PortfolioPage() {
   const router = useRouter();
   const [items, setItems] = useState<PortfolioItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
 
   useEffect(() => {
     let isMounted = true;
@@ -84,6 +85,16 @@ export default function PortfolioPage() {
   const totalPnL = currentValue - totalCost;
   const totalPnLPercent = totalCost > 0 ? (totalPnL / totalCost) * 100 : 0;
 
+  const sortedItems = [...mergedItems].sort((a, b) => {
+    const currentPriceA = a.currentPrice || a.averagePrice;
+    const pnlPercentA = a.averagePrice > 0 ? ((currentPriceA - a.averagePrice) / a.averagePrice) * 100 : 0;
+    
+    const currentPriceB = b.currentPrice || b.averagePrice;
+    const pnlPercentB = b.averagePrice > 0 ? ((currentPriceB - b.averagePrice) / b.averagePrice) * 100 : 0;
+
+    return sortOrder === 'desc' ? pnlPercentB - pnlPercentA : pnlPercentA - pnlPercentB;
+  });
+
   const handleRefresh = async () => {
     await mutate('/api/portfolio');
     if (symbolsQuery) {
@@ -143,7 +154,17 @@ export default function PortfolioPage() {
       )}
 
       <div className="flex flex-col gap-3">
-        <h3 className="font-bold text-sm text-default-500 tracking-wide px-1">CỔ PHIẾU ĐANG GIỮ</h3>
+        <div className="flex items-center justify-between px-1">
+          <h3 className="font-bold text-sm text-default-500 tracking-wide">CỔ PHIẾU ĐANG GIỮ</h3>
+          {mergedItems.length > 1 && (
+            <button 
+              onClick={() => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')}
+              className="flex items-center gap-1 text-xs font-bold text-default-500 bg-content2 hover:bg-content3 px-2 py-1 rounded-lg transition-colors"
+            >
+              Lãi/Lỗ % {sortOrder === 'desc' ? <ArrowDown size={14} className="text-danger-500" /> : <ArrowUp size={14} className="text-emerald-500" />}
+            </button>
+          )}
+        </div>
         
         {loading ? (
           <div className="flex justify-center p-10"><div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div></div>
@@ -154,7 +175,7 @@ export default function PortfolioPage() {
           </div>
         ) : (
           <div className="flex flex-col gap-3">
-            {mergedItems.map((item) => {
+            {sortedItems.map((item) => {
               const currentPrice = item.currentPrice || item.averagePrice;
               const pnl = (currentPrice - item.averagePrice) * item.quantity;
               const pnlPercent = (currentPrice - item.averagePrice) / item.averagePrice * 100;
