@@ -12,11 +12,18 @@ interface Props {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   symbol: string | null;
+  symbolsList?: string[];
 }
 
-export default function StockDetailDrawer({ isOpen, onOpenChange, symbol }: Props) {
+export default function StockDetailDrawer({ isOpen, onOpenChange, symbol, symbolsList = [] }: Props) {
+  const [activeSymbol, setActiveSymbol] = useState<string | null>(symbol);
+  
+  useEffect(() => {
+    if (isOpen && symbol) setActiveSymbol(symbol);
+  }, [isOpen, symbol]);
+
   const { data: portfolioData } = useSWR(isOpen ? '/api/portfolio' : null, fetcher);
-  const ownedStock = portfolioData?.data?.find((item: any) => item.symbol === symbol);
+  const ownedStock = portfolioData?.data?.find((item: any) => item.symbol === activeSymbol);
 
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const [overview, setOverview] = useState<StockOverview | null>(null);
@@ -37,8 +44,12 @@ export default function StockDetailDrawer({ isOpen, onOpenChange, symbol }: Prop
   const [trading, setTrading] = useState(false);
   const [tradeSuccess, setTradeSuccess] = useState(false);
 
+  // Swipe states
+  const touchStartX = useRef(0);
+  const touchEndX = useRef(0);
+
   useEffect(() => {
-    if (!isOpen || !symbol) return;
+    if (!isOpen || !activeSymbol) return;
     
     let isMounted = true;
     setLoading(true);
@@ -51,9 +62,9 @@ export default function StockDetailDrawer({ isOpen, onOpenChange, symbol }: Prop
         const startDate = d.toISOString().split('T')[0];
 
         const [overviewRes, historyRes, alertRes] = await Promise.all([
-          fetch(`/api/stock?symbol=${symbol}&type=overview`),
-          fetch(`/api/stock?symbol=${symbol}&type=history&start=${startDate}&end=${endDate}`),
-          fetch(`/api/alerts?symbol=${symbol}`)
+          fetch(`/api/stock?symbol=${activeSymbol}&type=overview`),
+          fetch(`/api/stock?symbol=${activeSymbol}&type=history&start=${startDate}&end=${endDate}`),
+          fetch(`/api/alerts?symbol=${activeSymbol}`)
         ]);
 
         const overviewJson = await overviewRes.json();
@@ -87,7 +98,7 @@ export default function StockDetailDrawer({ isOpen, onOpenChange, symbol }: Prop
     fetchData();
 
     return () => { isMounted = false; };
-  }, [isOpen, symbol]);
+  }, [isOpen, activeSymbol]);
 
   useEffect(() => {
     if (!chartContainerRef.current || history.length === 0 || loading) return;
@@ -150,7 +161,7 @@ export default function StockDetailDrawer({ isOpen, onOpenChange, symbol }: Prop
   }, [history, loading]);
 
   const handleTrade = async () => {
-    if (!symbol || !tradeQuantity || !tradePrice) return;
+    if (!activeSymbol || !tradeQuantity || !tradePrice) return;
     setTrading(true);
     setTradeSuccess(false);
     
@@ -163,7 +174,7 @@ export default function StockDetailDrawer({ isOpen, onOpenChange, symbol }: Prop
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          symbol,
+          symbol: activeSymbol,
           quantityChange: qtyChange,
           price: prc
         })
@@ -184,7 +195,7 @@ export default function StockDetailDrawer({ isOpen, onOpenChange, symbol }: Prop
   };
 
   const handleSaveAlert = async () => {
-    if (!symbol) return;
+    if (!activeSymbol) return;
     setSavingAlert(true);
     setAlertSuccess(false);
     try {
@@ -192,7 +203,7 @@ export default function StockDetailDrawer({ isOpen, onOpenChange, symbol }: Prop
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          symbol,
+          symbol: activeSymbol,
           minPrice: parseFloat(minPrice) * 1000 || 0,
           maxPrice: parseFloat(maxPrice) * 1000 || 0,
           isActive: isAlertActive,
@@ -224,17 +235,76 @@ export default function StockDetailDrawer({ isOpen, onOpenChange, symbol }: Prop
 
   if (!isOpen) return null;
 
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.targetTouches[0].clientX;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    touchEndX.current = e.changedTouches[0].clientX;
+    handleSwipe();
+  };
+
+  const handleSwipe = () => {
+    if (!activeSymbol || symbolsList.length <= 1) return;
+    const swipeDistance = touchStartX.current - touchEndX.current;
+    
+    // Swipe left (next symbol)
+    if (swipeDistance > 50) {
+      const currentIndex = symbolsList.indexOf(activeSymbol);
+      if (currentIndex < symbolsList.length - 1) {
+        setActiveSymbol(symbolsList[currentIndex + 1]);
+      }
+    }
+    // Swipe right (prev symbol)
+    else if (swipeDistance < -50) {
+      const currentIndex = symbolsList.indexOf(activeSymbol);
+      if (currentIndex > 0) {
+        setActiveSymbol(symbolsList[currentIndex - 1]);
+      }
+    }
+  };
+
+  const fillPrice = (type: 'floor' | 'ref' | 'ceil') => {
+    if (!overview) return;
+    if (type === 'floor') setTradePrice((overview.floorPrice / 1000).toFixed(2));
+    if (type === 'ref') setTradePrice((overview.referencePrice / 1000).toFixed(2));
+    if (type === 'ceil') setTradePrice((overview.ceilingPrice / 1000).toFixed(2));
+  };
+
+  const fillQuantity = (amount: number | 'all') => {
+    if (amount === 'all') {
+      if (tradeAction === 'SELL' && ownedStock) {
+        setTradeQuantity(ownedStock.quantity.toString());
+      }
+    } else {
+      setTradeQuantity(amount.toString());
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-[100] flex flex-col justify-end bg-black/60 backdrop-blur-sm">
       <div 
         className="absolute inset-0" 
         onClick={() => onOpenChange(false)}
       />
-      <div className="relative bg-background w-full h-[90vh] rounded-t-3xl shadow-2xl border-t border-white/10 overflow-y-auto animate-in slide-in-from-bottom-full duration-300 pb-10">
+      <div 
+        className="relative bg-background w-full h-[90vh] rounded-t-3xl shadow-2xl border-t border-white/10 overflow-y-auto animate-in slide-in-from-bottom-full duration-300 pb-10"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
         <div className="sticky top-0 bg-background/80 backdrop-blur-xl z-10 px-5 pt-3 pb-2 border-b border-white/5 flex justify-between items-center">
           <div>
             <div className="w-14 h-1.5 bg-default-300 rounded-full mb-3" />
-            {symbol && <h2 className="text-3xl font-black tracking-tight">{symbol.toUpperCase()}</h2>}
+            {activeSymbol && (
+              <div className="flex items-center gap-2">
+                <h2 className="text-3xl font-black tracking-tight">{activeSymbol.toUpperCase()}</h2>
+                {symbolsList.length > 1 && (
+                  <span className="text-[10px] bg-content3 text-default-500 px-2 py-0.5 rounded-full font-bold">
+                    {symbolsList.indexOf(activeSymbol) + 1} / {symbolsList.length}
+                  </span>
+                )}
+              </div>
+            )}
             {overview && <p className="text-sm text-default-400 font-medium truncate">{overview.name}</p>}
           </div>
           <button 
@@ -348,7 +418,16 @@ export default function StockDetailDrawer({ isOpen, onOpenChange, symbol }: Prop
                   
                   <div className="grid grid-cols-2 gap-3 mt-1">
                     <div className="flex flex-col gap-1.5">
-                      <span className="text-xs text-default-500 font-medium">Khối lượng</span>
+                      <div className="flex justify-between items-end">
+                        <span className="text-xs text-default-500 font-medium">Khối lượng</span>
+                        <div className="flex gap-1">
+                          <button onClick={() => fillQuantity(100)} className="text-[9px] bg-content3 px-1.5 py-0.5 rounded font-bold text-default-500">100</button>
+                          <button onClick={() => fillQuantity(1000)} className="text-[9px] bg-content3 px-1.5 py-0.5 rounded font-bold text-default-500">1k</button>
+                          {tradeAction === 'SELL' && ownedStock && (
+                            <button onClick={() => fillQuantity('all')} className="text-[9px] bg-danger/20 text-danger px-1.5 py-0.5 rounded font-bold">ALL</button>
+                          )}
+                        </div>
+                      </div>
                       <input 
                         type="number"
                         placeholder="VD: 1000"
@@ -358,7 +437,14 @@ export default function StockDetailDrawer({ isOpen, onOpenChange, symbol }: Prop
                       />
                     </div>
                     <div className="flex flex-col gap-1.5">
-                      <span className="text-xs text-default-500 font-medium">Giá đặt</span>
+                      <div className="flex justify-between items-end">
+                        <span className="text-xs text-default-500 font-medium">Giá đặt</span>
+                        <div className="flex gap-1">
+                          <button onClick={() => fillPrice('floor')} className="text-[9px] bg-cyan-500/10 text-cyan-500 px-1.5 py-0.5 rounded font-bold">Sàn</button>
+                          <button onClick={() => fillPrice('ref')} className="text-[9px] bg-warning-500/10 text-warning-500 px-1.5 py-0.5 rounded font-bold">Khớp</button>
+                          <button onClick={() => fillPrice('ceil')} className="text-[9px] bg-fuchsia-500/10 text-fuchsia-500 px-1.5 py-0.5 rounded font-bold">Trần</button>
+                        </div>
+                      </div>
                       <input 
                         type="number"
                         placeholder="Giá khớp"

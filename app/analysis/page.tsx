@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { Activity, TrendingUp, TrendingDown, Minus, AlertTriangle, ShieldCheck } from "lucide-react";
-import useSWR from "swr";
+import useSWR, { mutate } from "swr";
+import PullToRefresh from "@/components/pull-to-refresh";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -75,10 +76,23 @@ export default function AnalysisPage() {
     
     fetchAnalysis();
     return () => { isMounted = false; };
-  }, [tab]);
+  }, [tab, portfolioSymbols, watchlists]);
+
+  const handleRefresh = async () => {
+    // Determine which API to refetch based on tab
+    if (tab === 'portfolio') {
+      await mutate('/api/portfolio');
+    } else {
+      await mutate('/api/sheets');
+    }
+    // We don't manually mutate analysis API here, SWR doesn't cache the raw fetch call inside useEffect.
+    // But setting loading might re-trigger it. Wait, the useEffect depends on tab, portfolioSymbols, watchlists.
+    // Mutating those will trigger useEffect.
+  };
 
   return (
-    <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <PullToRefresh onRefresh={handleRefresh}>
+      <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
       <div className="flex items-center gap-3 mb-2">
         <div className="p-3 bg-fuchsia-500/20 rounded-2xl">
           <Activity className="text-fuchsia-500" size={28} />
@@ -235,6 +249,7 @@ export default function AnalysisPage() {
           ))
         )}
       </div>
-    </div>
+      </div>
+    </PullToRefresh>
   );
 }

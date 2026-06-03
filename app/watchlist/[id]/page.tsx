@@ -4,11 +4,13 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ChevronLeft, Plus, Search, ArrowUpDown } from "lucide-react";
 import StockDetailDrawer from "@/components/stock-detail-drawer";
+import StockSearchInput from "@/components/stock-search-input";
 import { TreemapHeatmap } from "@/components/treemap-heatmap";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { SortableStockRow } from "@/components/sortable-stock-row";
-import useSWR from 'swr';
+import PullToRefresh from "@/components/pull-to-refresh";
+import useSWR, { mutate } from 'swr';
 
 const fetcher = (url: string) => fetch(url).then(res => res.json());
 
@@ -19,7 +21,6 @@ export default function WatchlistDetail() {
 
   const [watchlist, setWatchlist] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [newSymbol, setNewSymbol] = useState("");
   
   const [isOpen, setIsOpen] = useState(false);
   const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null);
@@ -41,13 +42,12 @@ export default function WatchlistDetail() {
     fetchWatchlist();
   }, [id]);
 
-  const handleAddSymbol = async () => {
-    const sym = newSymbol.trim().toUpperCase();
+  const handleAddSymbol = async (symbol: string) => {
+    const sym = symbol.trim().toUpperCase();
     if (!sym || !watchlist) return;
     
     let currentSymbols = watchlist.symbols ? watchlist.symbols.split(',') : [];
     if (currentSymbols.includes(sym)) {
-      setNewSymbol("");
       return;
     }
     
@@ -55,7 +55,6 @@ export default function WatchlistDetail() {
     const updatedSymbols = currentSymbols.join(',');
     
     setWatchlist({ ...watchlist, symbols: updatedSymbols });
-    setNewSymbol("");
 
     await fetch('/api/sheets', {
       method: 'PUT',
@@ -146,8 +145,13 @@ export default function WatchlistDetail() {
     );
   }
 
+  const handleRefresh = async () => {
+    await mutate(symbolsQuery ? `/api/stock/bulk?symbols=${symbolsQuery}` : null);
+  };
+
   return (
-    <div className="flex flex-col gap-6 animate-in slide-in-from-right-4 fade-in duration-300">
+    <PullToRefresh onRefresh={handleRefresh}>
+      <div className="flex flex-col gap-6 animate-in slide-in-from-right-4 fade-in duration-300 pb-20">
       <div className="flex items-center gap-3">
         <button 
           onClick={() => router.push('/')}
@@ -158,24 +162,12 @@ export default function WatchlistDetail() {
         <h1 className="text-2xl font-extrabold tracking-tight truncate">{watchlist.name}</h1>
       </div>
 
-      <div className="flex gap-2 bg-content2/30 p-1.5 rounded-2xl border border-white/5">
-        <div className="flex-1 flex items-center px-2">
-          <Search size={20} className="text-default-400 ml-1" />
-          <input 
-            placeholder="Mã cổ phiếu (VD: VHM, FPT)"
-            className="w-full bg-transparent outline-none px-3 text-lg font-medium placeholder:font-normal"
-            value={newSymbol}
-            onChange={(e) => setNewSymbol(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleAddSymbol()}
-          />
-        </div>
-        <button 
-          className="bg-primary text-white p-3 rounded-xl shadow-lg shadow-primary/30 disabled:opacity-50 transition-opacity hover:opacity-90"
-          onClick={handleAddSymbol}
-          disabled={!newSymbol.trim()}
-        >
-          <Plus size={24} />
-        </button>
+      <div className="z-20">
+        <StockSearchInput 
+          onSelect={handleAddSymbol} 
+          placeholder="Mã cổ phiếu (VD: HPG, FPT)"
+          buttonText="Thêm mã"
+        />
       </div>
 
       {symbolsList.length > 0 && !isStocksLoading && (
@@ -229,8 +221,10 @@ export default function WatchlistDetail() {
       <StockDetailDrawer 
         isOpen={isOpen} 
         onOpenChange={setIsOpen} 
-        symbol={selectedSymbol} 
+        symbol={selectedSymbol}
+        symbolsList={symbolsList}
       />
-    </div>
+      </div>
+    </PullToRefresh>
   );
 }

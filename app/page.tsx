@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Plus, Trash2, ChevronRight, LayoutList } from "lucide-react";
 import { useRouter } from "next/navigation";
+import PullToRefresh from "@/components/pull-to-refresh";
 
 export default function Home() {
   const [watchlists, setWatchlists] = useState<any[]>([]);
@@ -58,8 +59,13 @@ export default function Home() {
     }
   };
 
+  const handleRefresh = async () => {
+    await fetchWatchlists();
+  };
+
   return (
-    <div className="flex flex-col gap-6 animate-in fade-in duration-500">
+    <PullToRefresh onRefresh={handleRefresh}>
+      <div className="flex flex-col gap-6 animate-in fade-in duration-500 pb-20">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight">Danh mục</h1>
@@ -143,6 +149,7 @@ export default function Home() {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </PullToRefresh>
   );
 }

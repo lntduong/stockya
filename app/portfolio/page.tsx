@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { TrendingUp, Wallet, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import StockDetailDrawer from "@/components/stock-detail-drawer";
 import { TreemapHeatmap } from "@/components/treemap-heatmap";
-import useSWR from 'swr';
+import PullToRefresh from "@/components/pull-to-refresh";
+import useSWR, { mutate } from 'swr';
 
 const fetcher = (url: string) => fetch(url).then(res => res.json());
 
@@ -69,8 +70,16 @@ export default function PortfolioPage() {
   const totalPnL = currentValue - totalCost;
   const totalPnLPercent = totalCost > 0 ? (totalPnL / totalCost) * 100 : 0;
 
+  const handleRefresh = async () => {
+    await mutate('/api/portfolio');
+    if (symbolsQuery) {
+      await mutate(`/api/stock/bulk?symbols=${symbolsQuery}`);
+    }
+  };
+
   return (
-    <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <PullToRefresh onRefresh={handleRefresh}>
+      <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
       <div className="flex items-center gap-3 mb-2">
         <div className="p-3 bg-primary/20 rounded-2xl">
           <Wallet className="text-primary" size={28} />
@@ -164,7 +173,9 @@ export default function PortfolioPage() {
         isOpen={!!selectedSymbol}
         onOpenChange={(open) => !open && setSelectedSymbol(null)}
         symbol={selectedSymbol}
+        symbolsList={mergedItems.map(i => i.symbol)}
       />
-    </div>
+      </div>
+    </PullToRefresh>
   );
 }

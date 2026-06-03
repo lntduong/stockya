@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import useSWR from 'swr';
+import useSWR, { mutate } from 'swr';
 import { Radar, TrendingUp, TrendingDown, Clock, AlertTriangle } from "lucide-react";
 import StockDetailDrawer from "@/components/stock-detail-drawer";
+import PullToRefresh from "@/components/pull-to-refresh";
 
 const fetcher = (url: string) => fetch(url).then(res => res.json());
 
@@ -72,8 +73,15 @@ export default function RadarPage() {
     );
   };
 
+  const handleRefresh = async () => {
+    await mutate('/api/radar');
+  };
+
+  const allSymbols = [...(data?.data?.buy || []), ...(data?.data?.sell || [])].map((item: any) => item.symbol);
+
   return (
-    <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-10">
+    <PullToRefresh onRefresh={handleRefresh}>
+      <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
       <div className="flex items-center gap-3 mb-2">
         <div className="p-3 bg-fuchsia-500/20 rounded-2xl relative overflow-hidden">
           <Radar className="text-fuchsia-500 relative z-10 animate-spin-slow" size={28} />
@@ -146,7 +154,9 @@ export default function RadarPage() {
         isOpen={!!selectedSymbol}
         onOpenChange={(open) => !open && setSelectedSymbol(null)}
         symbol={selectedSymbol}
+        symbolsList={allSymbols}
       />
-    </div>
+      </div>
+    </PullToRefresh>
   );
 }
