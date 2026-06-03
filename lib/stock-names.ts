@@ -4,7 +4,7 @@
  * Dữ liệu này được lưu tĩnh (static) để đảm bảo tốc độ tải cực nhanh.
  */
 
-const STOCK_NAMES: Record<string, { name: string; exchange: string }> = {
+export const STOCK_NAMES: Record<string, { name: string; exchange: string }> = {
   // === HOSE ===
   'AAA': { name: 'Nhựa An Phát Xanh', exchange: 'HOSE' },
   'ACB': { name: 'Ngân hàng Á Châu', exchange: 'HOSE' },
