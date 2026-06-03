@@ -9,86 +9,66 @@ const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export default function AnalysisPage() {
   const [tab, setTab] = useState<'portfolio' | 'watchlist'>('portfolio');
-  const [groups, setGroups] = useState<{name: string, items: any[]}[]>([]);
-  const [loading, setLoading] = useState(false);
 
   const { data: watchlistsResponse } = useSWR('/api/sheets', fetcher);
   const watchlists = watchlistsResponse?.data || [];
 
   const { data: portfolioResponse } = useSWR('/api/portfolio', fetcher);
   const portfolioItems = portfolioResponse?.data || [];
-  const portfolioSymbols = portfolioItems.map((item: any) => item.symbol);
+  
+  // Compute groups and symbols synchronously to avoid useEffect loops
+  const fetchGroups: { name: string, symbols: string[] }[] = [];
+  const allSymbolsToFetch = new Set<string>();
 
-  useEffect(() => {
-    let isMounted = true;
-    
-    const fetchAnalysis = async () => {
-      setLoading(true);
-      setGroups([]);
-      try {
-        let fetchGroups: { name: string, symbols: string[] }[] = [];
-        let allSymbolsToFetch = new Set<string>();
-        
-        if (tab === 'portfolio') {
-          if (portfolioSymbols.length > 0) {
-            fetchGroups.push({ name: 'Tài sản của tôi', symbols: portfolioSymbols });
-            portfolioSymbols.forEach((s: string) => allSymbolsToFetch.add(s));
-          }
-        } else {
-          (watchlists || []).forEach((wl: any) => {
-            if (wl.symbols) {
-              const syms = wl.symbols.split(',').filter(Boolean);
-              if (syms.length > 0) {
-                fetchGroups.push({ name: wl.name, symbols: syms });
-                syms.forEach((s: string) => allSymbolsToFetch.add(s));
-              }
-            }
-          });
+  if (tab === 'portfolio') {
+    const portfolioSymbols = portfolioItems.map((item: any) => item.symbol);
+    if (portfolioSymbols.length > 0) {
+      fetchGroups.push({ name: 'Tài sản của tôi', symbols: portfolioSymbols });
+      portfolioSymbols.forEach((s: string) => allSymbolsToFetch.add(s));
+    }
+  } else {
+    watchlists.forEach((wl: any) => {
+      if (wl.symbols) {
+        const syms = wl.symbols.split(',').filter(Boolean);
+        if (syms.length > 0) {
+          fetchGroups.push({ name: wl.name, symbols: syms });
+          syms.forEach((s: string) => allSymbolsToFetch.add(s));
         }
-        
-        if (allSymbolsToFetch.size > 0) {
-          const analysisRes = await fetch(`/api/analysis?symbols=${Array.from(allSymbolsToFetch).join(',')}`);
-          const analysisJson = await analysisRes.json();
-          const analysisData = analysisJson.data || [];
-          
-          // Map array to dictionary by symbol
-          const analysisDict: Record<string, any> = {};
-          analysisData.forEach((item: any) => {
-            analysisDict[item.symbol] = item;
-          });
-          
-          // Construct the final groups
-          const finalGroups = fetchGroups.map(g => ({
-            name: g.name,
-            items: g.symbols.map(s => analysisDict[s]).filter(Boolean)
-          })).filter(g => g.items.length > 0);
-          
-          if (isMounted) setGroups(finalGroups);
-        } else {
-          if (isMounted) setGroups([]);
-        }
-      } catch (error) {
-        console.error(error);
-      } finally {
-        if (isMounted) setLoading(false);
       }
-    };
-    
-    fetchAnalysis();
-    return () => { isMounted = false; };
-  }, [tab, portfolioSymbols, watchlists]);
+    });
+  }
+
+  const symbolsQuery = Array.from(allSymbolsToFetch).join(',');
+
+  const { data: analysisResponse, isLoading, mutate: mutateAnalysis } = useSWR(
+    symbolsQuery ? `/api/analysis?symbols=${symbolsQuery}` : null,
+    fetcher,
+    { revalidateOnFocus: false, refreshInterval: 60000 }
+  );
+
+  const analysisData = analysisResponse?.data || [];
+  const analysisDict: Record<string, any> = {};
+  analysisData.forEach((item: any) => {
+    analysisDict[item.symbol] = item;
+  });
+
+  const groups = fetchGroups.map(g => ({
+    name: g.name,
+    items: g.symbols.map(s => analysisDict[s]).filter(Boolean)
+  })).filter(g => g.items.length > 0);
 
   const handleRefresh = async () => {
-    // Determine which API to refetch based on tab
     if (tab === 'portfolio') {
       await mutate('/api/portfolio');
     } else {
       await mutate('/api/sheets');
     }
-    // We don't manually mutate analysis API here, SWR doesn't cache the raw fetch call inside useEffect.
-    // But setting loading might re-trigger it. Wait, the useEffect depends on tab, portfolioSymbols, watchlists.
-    // Mutating those will trigger useEffect.
+    if (symbolsQuery) {
+      await mutateAnalysis();
+    }
   };
+
+
 
   return (
     <PullToRefresh onRefresh={handleRefresh}>
@@ -120,7 +100,7 @@ export default function AnalysisPage() {
       </div>
 
       <div className="flex flex-col gap-4">
-        {loading ? (
+        {isLoading ? (
           <div className="flex justify-center py-10"><div className="w-8 h-8 border-4 border-fuchsia-500/30 border-t-fuchsia-500 rounded-full animate-spin" /></div>
         ) : groups.length === 0 ? (
           <div className="text-center p-10 bg-content2/30 rounded-3xl border border-white/5">
