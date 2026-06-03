@@ -13,9 +13,14 @@ export default function RadarPage() {
     revalidateOnFocus: true
   });
 
+  const { data: portfolioData } = useSWR('/api/portfolio', fetcher);
+  const portfolioItems = portfolioData?.data || [];
+
   const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null);
 
   const renderStockCard = (item: any, isBuy: boolean) => {
+    const ownedStock = portfolioItems.find((i: any) => i.symbol === item.symbol);
+    
     return (
       <div 
         key={item.symbol}
@@ -55,6 +60,14 @@ export default function RadarPage() {
             </span>
           </div>
         </div>
+
+        {ownedStock && (
+          <div className="mt-1 flex">
+            <div className="text-[10px] bg-primary/20 text-primary px-2 py-1 rounded-md font-bold flex items-center gap-1 w-fit">
+              👜 Bạn đang giữ {ownedStock.quantity.toLocaleString()} cổ (Giá vốn: {ownedStock.averagePrice.toLocaleString()})
+            </div>
+          </div>
+        )}
       </div>
     );
   };

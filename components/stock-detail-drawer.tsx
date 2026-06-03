@@ -3,7 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import { createChart, CandlestickSeries } from "lightweight-charts";
 import { StockOverview, StockHistoryData } from "@/lib/stock-api";
-import { X } from "lucide-react";
+import { X, Briefcase } from "lucide-react";
+import useSWR from 'swr';
+
+const fetcher = (url: string) => fetch(url).then(res => res.json());
 
 interface Props {
   isOpen: boolean;
@@ -12,6 +15,9 @@ interface Props {
 }
 
 export default function StockDetailDrawer({ isOpen, onOpenChange, symbol }: Props) {
+  const { data: portfolioData } = useSWR(isOpen ? '/api/portfolio' : null, fetcher);
+  const ownedStock = portfolioData?.data?.find((item: any) => item.symbol === symbol);
+
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const [overview, setOverview] = useState<StockOverview | null>(null);
   const [history, setHistory] = useState<StockHistoryData[]>([]);
@@ -256,6 +262,24 @@ export default function StockDetailDrawer({ isOpen, onOpenChange, symbol }: Prop
                       {overview.percentChange > 0 ? '+' : ''}{overview.percentChange}%
                     </span>
                   </div>
+
+                  {ownedStock && (
+                    <div className="bg-primary/10 border border-primary/20 rounded-2xl p-4 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-primary/20 rounded-full text-primary">
+                          <Briefcase size={20} />
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-xs text-primary font-bold uppercase tracking-wider mb-0.5">Tài sản của bạn</span>
+                          <span className="font-black text-lg">{ownedStock.quantity.toLocaleString()} cổ phiếu</span>
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-end">
+                        <span className="text-xs text-default-500 font-medium mb-0.5">Giá vốn</span>
+                        <span className="font-bold">{ownedStock.averagePrice.toLocaleString()}</span>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="grid grid-cols-3 gap-3 bg-content2/50 border border-white/5 p-4 rounded-2xl">
                     <div className="flex flex-col">

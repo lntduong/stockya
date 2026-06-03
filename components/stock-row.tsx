@@ -3,6 +3,9 @@
 import { useEffect, useState } from "react";
 import { Trash2 } from "lucide-react";
 import { StockOverview } from "@/lib/stock-api";
+import useSWR from 'swr';
+
+const fetcher = (url: string) => fetch(url).then(res => res.json());
 
 export default function StockRow({ 
   symbol, 
@@ -17,6 +20,9 @@ export default function StockRow({
   onRemove: (s: string) => void, 
   onPress: (s: string) => void 
 }) {
+  const { data: portfolioData } = useSWR('/api/portfolio', fetcher);
+  const ownedStock = portfolioData?.data?.find((i: any) => i.symbol === symbol);
+
   if (loading) {
     return <div className="w-full h-20 rounded-2xl bg-content3/40 animate-pulse" />;
   }
@@ -68,6 +74,14 @@ export default function StockRow({
           )}
         </div>
         <p className="text-xs text-default-500 truncate">{data?.name || "Đang cập nhật..."}</p>
+        
+        {ownedStock && (
+          <div className="mt-1 flex">
+            <div className="text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded font-bold flex items-center gap-1 w-fit">
+              👜 {ownedStock.quantity.toLocaleString()} cổ (Giá: {ownedStock.averagePrice.toLocaleString()})
+            </div>
+          </div>
+        )}
       </div>
       
       <div className="flex items-center gap-3">

@@ -2,11 +2,21 @@
 
 import { useEffect, useState } from "react";
 import { Activity, TrendingUp, TrendingDown, Minus, AlertTriangle, ShieldCheck } from "lucide-react";
+import useSWR from "swr";
+
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export default function AnalysisPage() {
   const [tab, setTab] = useState<'portfolio' | 'watchlist'>('portfolio');
   const [groups, setGroups] = useState<{name: string, items: any[]}[]>([]);
   const [loading, setLoading] = useState(false);
+
+  const { data: watchlistsResponse } = useSWR('/api/sheets', fetcher);
+  const watchlists = watchlistsResponse?.data || [];
+
+  const { data: portfolioResponse } = useSWR('/api/portfolio', fetcher);
+  const portfolioItems = portfolioResponse?.data || [];
+  const portfolioSymbols = portfolioItems.map((item: any) => item.symbol);
 
   useEffect(() => {
     let isMounted = true;
@@ -19,17 +29,12 @@ export default function AnalysisPage() {
         let allSymbolsToFetch = new Set<string>();
         
         if (tab === 'portfolio') {
-          const res = await fetch('/api/portfolio');
-          const json = await res.json();
-          const symbols = (json.data || []).map((i: any) => i.symbol);
-          if (symbols.length > 0) {
-            fetchGroups.push({ name: 'Tài sản của tôi', symbols });
-            symbols.forEach((s: string) => allSymbolsToFetch.add(s));
+          if (portfolioSymbols.length > 0) {
+            fetchGroups.push({ name: 'Tài sản của tôi', symbols: portfolioSymbols });
+            portfolioSymbols.forEach((s: string) => allSymbolsToFetch.add(s));
           }
         } else {
-          const res = await fetch('/api/sheets');
-          const json = await res.json();
-          (json.data || []).forEach((wl: any) => {
+          (watchlists || []).forEach((wl: any) => {
             if (wl.symbols) {
               const syms = wl.symbols.split(',').filter(Boolean);
               if (syms.length > 0) {
@@ -116,7 +121,9 @@ export default function AnalysisPage() {
                 <span className="text-xs bg-content2 text-default-500 font-bold px-2 py-0.5 rounded-full">{group.items.length}</span>
               </div>
               
-              {group.items.map((item) => (
+              {group.items.map((item) => {
+                const ownedStock = portfolioItems.find((i: any) => i.symbol === item.symbol);
+                return (
                 <div key={item.symbol} className="bg-content2/40 backdrop-blur-md rounded-3xl p-5 border border-white/5 flex flex-col gap-4">
                   
                   {/* Header: Symbol & Recommendation Badge */}
@@ -215,8 +222,15 @@ export default function AnalysisPage() {
                     </div>
                   </div>  
 
+                  {ownedStock && (
+                    <div className="mt-1 flex">
+                      <div className="text-[10px] bg-primary/20 text-primary px-2 py-1 rounded-md font-bold flex items-center gap-1 w-fit">
+                        👜 Đang giữ {ownedStock.quantity.toLocaleString()} cổ (Giá vốn: {ownedStock.averagePrice.toLocaleString()})
+                      </div>
+                    </div>
+                  )}
                 </div>
-              ))}
+              )})}
             </div>
           ))
         )}
