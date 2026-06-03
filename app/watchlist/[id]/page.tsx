@@ -113,7 +113,29 @@ export default function WatchlistDetail() {
     { refreshInterval: 10000 } // Tự động cập nhật 10s/lần
   );
 
+  const { data: analysisResponse } = useSWR(
+    symbolsQuery ? `/api/analysis?symbols=${symbolsQuery}` : null,
+    fetcher,
+    { refreshInterval: 60000 }
+  );
+
+  const { data: portfolioResponse } = useSWR('/api/portfolio', fetcher);
+
   const stockDataDict = stockDataResponse?.data || {};
+  
+  const analysisDict: Record<string, any> = {};
+  if (analysisResponse?.data) {
+    analysisResponse.data.forEach((item: any) => {
+      analysisDict[item.symbol] = item;
+    });
+  }
+
+  const portfolioDict: Record<string, any> = {};
+  if (portfolioResponse?.data) {
+    portfolioResponse.data.forEach((item: any) => {
+      portfolioDict[item.symbol] = item;
+    });
+  }
 
   if (loading) {
     return (
@@ -208,6 +230,9 @@ export default function WatchlistDetail() {
                   key={sym} 
                   symbol={sym} 
                   data={stockDataDict[sym]}
+                  analysisData={analysisDict[sym]}
+                  ownedQuantity={portfolioDict[sym]?.quantity}
+                  averagePrice={portfolioDict[sym]?.averagePrice}
                   loading={isStocksLoading}
                   onRemove={handleRemoveSymbol} 
                   onPress={openStockDetail}

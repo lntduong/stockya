@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { TrendingUp, Wallet, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import StockDetailDrawer from "@/components/stock-detail-drawer";
 import { TreemapHeatmap } from "@/components/treemap-heatmap";
+import CompactStockRow from "@/components/compact-stock-row";
 import PullToRefresh from "@/components/pull-to-refresh";
 import useSWR, { mutate } from 'swr';
 
@@ -54,7 +55,20 @@ export default function PortfolioPage() {
     { refreshInterval: 10000 } // Tự động làm mới mỗi 10 giây
   );
 
+  const { data: analysisResponse } = useSWR(
+    symbolsQuery ? `/api/analysis?symbols=${symbolsQuery}` : null,
+    fetcher,
+    { refreshInterval: 60000 }
+  );
+
   const stockDataDict = stockDataResponse?.data || {};
+  
+  const analysisDict: Record<string, any> = {};
+  if (analysisResponse?.data) {
+    analysisResponse.data.forEach((item: any) => {
+      analysisDict[item.symbol] = item;
+    });
+  }
 
   const mergedItems = items.map(item => {
     const stock = stockDataDict[item.symbol];
@@ -146,23 +160,16 @@ export default function PortfolioPage() {
               const pnlPercent = (currentPrice - item.averagePrice) / item.averagePrice * 100;
               
               return (
-                <div 
+                <CompactStockRow 
                   key={item.symbol}
-                  onClick={() => setSelectedSymbol(item.symbol)}
-                  className="bg-content2/40 hover:bg-content2 transition-all p-4 rounded-2xl flex items-center justify-between border border-black/5 dark:border-white/5 cursor-pointer"
-                >
-                  <div className="flex flex-col gap-1">
-                    <span className="font-black text-lg tracking-tight">{item.symbol}</span>
-                    <span className="text-xs text-default-500 font-medium">{item.quantity.toLocaleString()} cổ phiếu</span>
-                  </div>
-                  
-                  <div className="flex flex-col items-end gap-1">
-                    <span className="font-bold text-base">{(currentPrice).toLocaleString()}</span>
-                    <span className={`text-xs font-bold ${pnl > 0 ? 'text-emerald-500' : pnl < 0 ? 'text-danger-500' : 'text-default-500'}`}>
-                      {pnl > 0 ? '+' : ''}{pnl.toLocaleString()} ({pnlPercent > 0 ? '+' : ''}{pnlPercent.toFixed(2)}%)
-                    </span>
-                  </div>
-                </div>
+                  symbol={item.symbol}
+                  priceData={stockDataDict[item.symbol]}
+                  analysisData={analysisDict[item.symbol]}
+                  ownedQuantity={item.quantity}
+                  averagePrice={item.averagePrice}
+                  onPress={setSelectedSymbol}
+                  isPortfolioView={true}
+                />
               );
             })}
           </div>

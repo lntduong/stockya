@@ -1,10 +1,10 @@
 import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import StockRow from './stock-row';
+import CompactStockRow from './compact-stock-row';
 import { GripVertical } from 'lucide-react';
 
-export function SortableStockRow({ symbol, data, loading, onRemove, onPress }: any) {
+export function SortableStockRow({ symbol, data, analysisData, ownedQuantity, averagePrice, loading, onRemove, onPress }: any) {
   const {
     attributes,
     listeners,
@@ -31,7 +31,16 @@ export function SortableStockRow({ symbol, data, loading, onRemove, onPress }: a
         <GripVertical size={20} />
       </div>
       <div className="pl-10">
-        <StockRow symbol={symbol} data={data} loading={loading} onRemove={onRemove} onPress={onPress} />
+        <CompactStockRow 
+          symbol={symbol} 
+          priceData={data} 
+          analysisData={analysisData}
+          ownedQuantity={ownedQuantity}
+          averagePrice={averagePrice}
+          loading={loading} 
+          onRemove={onRemove} 
+          onPress={onPress} 
+        />
       </div>
     </div>
   );
