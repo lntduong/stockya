@@ -1,18 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Activity, TrendingUp, TrendingDown, Minus, LayoutGrid, List } from "lucide-react";
 import useSWR, { mutate } from "swr";
 import PullToRefresh from "@/components/pull-to-refresh";
 import CompactStockRow from "@/components/compact-stock-row";
-import StockDetailDrawer from "@/components/stock-detail-drawer";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export default function AnalysisPage() {
+  const router = useRouter();
   const [tab, setTab] = useState<'portfolio' | 'watchlist'>('portfolio');
   const [viewMode, setViewMode] = useState<'card' | 'list'>('card');
-  const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null);
 
   const { data: watchlistsResponse } = useSWR('/api/sheets', fetcher);
   const watchlists = watchlistsResponse?.data || [];
@@ -156,7 +156,7 @@ export default function AnalysisPage() {
                         analysisData={item}
                         ownedQuantity={ownedStock?.quantity}
                         averagePrice={ownedStock?.averagePrice}
-                        onPress={setSelectedSymbol}
+                        onPress={(sym) => router.push(`/stock/${sym}`)}
                       />
                     );
                   })}
@@ -166,7 +166,7 @@ export default function AnalysisPage() {
                   {group.items.map((item) => {
                     const ownedStock = portfolioItems.find((i: any) => i.symbol === item.symbol);
                     return (
-                    <div key={item.symbol} onClick={() => setSelectedSymbol(item.symbol)} className="bg-content2/40 cursor-pointer hover:bg-content2 transition-all backdrop-blur-md rounded-3xl p-5 border border-white/5 flex flex-col gap-4">
+                    <div key={item.symbol} onClick={() => router.push(`/stock/${item.symbol}`)} className="bg-content2/40 cursor-pointer hover:bg-content2 transition-all backdrop-blur-md rounded-3xl p-5 border border-white/5 flex flex-col gap-4">
                       
                       {/* Header: Symbol & Recommendation Badge */}
                       <div className="flex justify-between items-center border-b border-white/5 pb-3">
@@ -279,12 +279,7 @@ export default function AnalysisPage() {
           ))
         )}
       </div>
-      <StockDetailDrawer 
-        isOpen={!!selectedSymbol}
-        onOpenChange={(open) => !open && setSelectedSymbol(null)}
-        symbol={selectedSymbol}
-        symbolsList={Array.from(allSymbolsToFetch)}
-      />
+      </div>
       </div>
     </PullToRefresh>
   );

@@ -1,45 +1,29 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
 import { createChart, CandlestickSeries } from "lightweight-charts";
 import { StockOverview, StockHistoryData } from "@/lib/stock-api";
-import { X, Briefcase } from "lucide-react";
+import { ArrowLeft, Briefcase, TrendingUp, TrendingDown } from "lucide-react";
 import useSWR from 'swr';
+import Link from "next/link";
 
 const fetcher = (url: string) => fetch(url).then(res => res.json());
 
-interface Props {
-  isOpen: boolean;
-  onOpenChange: (open: boolean) => void;
-  symbol: string | null;
-  symbolsList?: string[];
-}
+export default function StockDetailPage() {
+  const router = useRouter();
+  const params = useParams();
+  const activeSymbol = typeof params.symbol === 'string' ? params.symbol.toUpperCase() : '';
 
-export default function StockDetailDrawer({ isOpen, onOpenChange, symbol, symbolsList = [] }: Props) {
-  const [activeSymbol, setActiveSymbol] = useState<string | null>(symbol);
-  
-  useEffect(() => {
-    if (isOpen && symbol) setActiveSymbol(symbol);
-    
-    // Prevent body scrolling when the drawer is open (Native Android feel)
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [isOpen, symbol]);
-
-  const { data: portfolioData } = useSWR(isOpen ? '/api/portfolio' : null, fetcher);
+  // Data fetching
+  const { data: portfolioData } = useSWR('/api/portfolio', fetcher);
   const ownedStock = portfolioData?.data?.find((item: any) => item.symbol === activeSymbol);
+  const portfolioItems = portfolioData?.data || [];
 
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const [overview, setOverview] = useState<StockOverview | null>(null);
   const [history, setHistory] = useState<StockHistoryData[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   
   // Alert states
   const [minPrice, setMinPrice] = useState("");
@@ -55,12 +39,8 @@ export default function StockDetailDrawer({ isOpen, onOpenChange, symbol, symbol
   const [trading, setTrading] = useState(false);
   const [tradeSuccess, setTradeSuccess] = useState(false);
 
-  // Swipe states
-  const touchStartX = useRef(0);
-  const touchEndX = useRef(0);
-
   useEffect(() => {
-    if (!isOpen || !activeSymbol) return;
+    if (!activeSymbol) return;
     
     let isMounted = true;
     setLoading(true);
@@ -94,10 +74,6 @@ export default function StockDetailDrawer({ isOpen, onOpenChange, symbol, symbol
              setMinPrice(alertJson.data.minPrice ? (alertJson.data.minPrice / 1000).toString() : "");
              setMaxPrice(alertJson.data.maxPrice ? (alertJson.data.maxPrice / 1000).toString() : "");
              setIsAlertActive(alertJson.data.isActive);
-          } else {
-             setMinPrice("");
-             setMaxPrice("");
-             setIsAlertActive(false);
           }
           setLoading(false);
         }
@@ -109,7 +85,7 @@ export default function StockDetailDrawer({ isOpen, onOpenChange, symbol, symbol
     fetchData();
 
     return () => { isMounted = false; };
-  }, [isOpen, activeSymbol]);
+  }, [activeSymbol]);
 
   useEffect(() => {
     if (!chartContainerRef.current || history.length === 0 || loading) return;
@@ -191,9 +167,7 @@ export default function StockDetailDrawer({ isOpen, onOpenChange, symbol, symbol
         })
       });
       
-      if (!res.ok) {
-        throw new Error("Lỗi giao dịch");
-      }
+      if (!res.ok) throw new Error("Lỗi giao dịch");
       
       setTradeSuccess(true);
       setTradeQuantity("");
@@ -222,9 +196,7 @@ export default function StockDetailDrawer({ isOpen, onOpenChange, symbol, symbol
         })
       });
       
-      if (!res.ok) {
-        throw new Error("Lỗi khi lưu dữ liệu");
-      }
+      if (!res.ok) throw new Error("Lỗi khi lưu dữ liệu");
       
       setAlertSuccess(true);
       setTimeout(() => setAlertSuccess(false), 3000);
@@ -242,37 +214,6 @@ export default function StockDetailDrawer({ isOpen, onOpenChange, symbol, symbol
     if (price > ref) return "text-emerald-500";
     if (price < ref) return "text-red-500";
     return "text-warning-500";
-  };
-
-  if (!isOpen) return null;
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.targetTouches[0].clientX;
-  };
-
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    touchEndX.current = e.changedTouches[0].clientX;
-    handleSwipe();
-  };
-
-  const handleSwipe = () => {
-    if (!activeSymbol || symbolsList.length <= 1) return;
-    const swipeDistance = touchStartX.current - touchEndX.current;
-    
-    // Swipe left (next symbol)
-    if (swipeDistance > 50) {
-      const currentIndex = symbolsList.indexOf(activeSymbol);
-      if (currentIndex < symbolsList.length - 1) {
-        setActiveSymbol(symbolsList[currentIndex + 1]);
-      }
-    }
-    // Swipe right (prev symbol)
-    else if (swipeDistance < -50) {
-      const currentIndex = symbolsList.indexOf(activeSymbol);
-      if (currentIndex > 0) {
-        setActiveSymbol(symbolsList[currentIndex - 1]);
-      }
-    }
   };
 
   const fillPrice = (type: 'floor' | 'ref' | 'ceil') => {
@@ -293,40 +234,31 @@ export default function StockDetailDrawer({ isOpen, onOpenChange, symbol, symbol
   };
 
   return (
-    <div 
-      className="fixed inset-0 z-[100] bg-background w-full h-[100dvh] overflow-y-auto overscroll-y-none animate-in slide-in-from-bottom-full duration-300"
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
-    >
-      <div className="sticky top-0 bg-background/90 backdrop-blur-xl z-20 px-5 pt-safe border-b border-white/5 flex justify-between items-center shadow-sm">
-        <div className="py-3">
+    <div className="min-h-screen bg-background pb-32 animate-in fade-in duration-300">
+      <div className="sticky top-0 bg-background/90 backdrop-blur-xl z-20 px-5 pt-safe border-b border-white/5 flex items-center shadow-sm">
+        <button 
+          className="p-2.5 -ml-2 mr-3 hover:bg-content2 rounded-full transition-colors"
+          onClick={() => router.back()}
+        >
+          <ArrowLeft size={24} />
+        </button>
+        <div className="py-3 flex-1">
           {activeSymbol && (
             <div className="flex items-center gap-2">
-              <h2 className="text-3xl font-black tracking-tight">{activeSymbol.toUpperCase()}</h2>
-              {symbolsList.length > 1 && (
-                <span className="text-[10px] bg-content3 text-default-500 px-2 py-0.5 rounded-full font-bold">
-                  {symbolsList.indexOf(activeSymbol) + 1} / {symbolsList.length}
-                </span>
-              )}
+              <h2 className="text-2xl font-black tracking-tight">{activeSymbol}</h2>
             </div>
           )}
           {overview && <p className="text-sm text-default-400 font-medium truncate">{overview.name}</p>}
         </div>
-        <button 
-          className="p-2.5 bg-content2 hover:bg-content3 rounded-full transition-colors"
-          onClick={() => onOpenChange(false)}
-        >
-          <X size={24} />
-        </button>
       </div>
       
-      <div className="px-5 pt-6 pb-20">
+      <div className="px-5 pt-6">
         {loading ? (
           <div className="flex h-64 items-center justify-center">
             <div className="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
           </div>
         ) : (
-          <div className="flex flex-col gap-8 animate-in slide-in-from-bottom-4 fade-in duration-400">
+          <div className="flex flex-col gap-8">
             {overview ? (
               <>
                 <div className="flex items-end gap-3">
@@ -471,7 +403,7 @@ export default function StockDetailDrawer({ isOpen, onOpenChange, symbol, symbol
             </div>
 
             {/* Alert Settings */}
-            <div className="flex flex-col gap-3 mt-2">
+            <div className="flex flex-col gap-3 mt-2 mb-6">
               <div className="flex justify-between items-center px-1">
                 <h3 className="font-bold text-sm text-default-500 tracking-wide">🔔 CẢNH BÁO GIÁ</h3>
                 <label className="flex items-center gap-2 cursor-pointer">
@@ -519,6 +451,32 @@ export default function StockDetailDrawer({ isOpen, onOpenChange, symbol, symbol
           </div>
         )}
       </div>
+
+      {/* Portfolio Horizontal List (Sticky at bottom) */}
+      {portfolioItems.length > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 bg-content2/95 backdrop-blur-xl border-t border-white/5 pb-safe pt-3 px-4 shadow-[0_-10px_30px_-15px_rgba(0,0,0,0.5)] z-30">
+          <h4 className="text-[10px] font-bold text-default-400 uppercase tracking-wider mb-2 px-1">Danh mục của bạn</h4>
+          <div className="flex overflow-x-auto gap-3 pb-4 snap-x hide-scrollbar">
+            {portfolioItems.map((item: any) => {
+              const isActive = item.symbol === activeSymbol;
+              return (
+                <Link 
+                  href={`/stock/${item.symbol}`} 
+                  key={item.symbol}
+                  className={`flex flex-col min-w-[100px] p-2.5 rounded-xl border transition-all snap-start ${isActive ? 'bg-primary/20 border-primary shadow-sm' : 'bg-content3/50 border-white/5 hover:bg-content3'}`}
+                >
+                  <div className="flex justify-between items-center mb-1">
+                    <span className={`font-black text-sm ${isActive ? 'text-primary' : ''}`}>{item.symbol}</span>
+                    <span className="text-[10px] font-medium text-default-400 bg-black/20 px-1.5 rounded">{item.quantity}</span>
+                  </div>
+                  {/* Current price would ideally be here if we fetch bulk prices, but SWR only has quantity/avgPrice. We can show avgPrice. */}
+                  <span className="text-xs text-default-500 font-medium">Vốn: {(item.averagePrice > 1000 ? item.averagePrice / 1000 : item.averagePrice).toLocaleString('en-US', {maximumFractionDigits: 1})}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

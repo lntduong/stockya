@@ -2,13 +2,14 @@
 
 import { useState } from "react";
 import useSWR, { mutate } from 'swr';
+import { useRouter } from "next/navigation";
 import { Radar, TrendingUp, TrendingDown, Clock, AlertTriangle } from "lucide-react";
-import StockDetailDrawer from "@/components/stock-detail-drawer";
 import PullToRefresh from "@/components/pull-to-refresh";
 
 const fetcher = (url: string) => fetch(url).then(res => res.json());
 
 export default function RadarPage() {
+  const router = useRouter();
   const { data, error, isLoading } = useSWR('/api/radar', fetcher, {
     refreshInterval: 60000, // Refresh every minute
     revalidateOnFocus: true
@@ -17,15 +18,13 @@ export default function RadarPage() {
   const { data: portfolioData } = useSWR('/api/portfolio', fetcher);
   const portfolioItems = portfolioData?.data || [];
 
-  const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null);
-
   const renderStockCard = (item: any, isBuy: boolean) => {
     const ownedStock = portfolioItems.find((i: any) => i.symbol === item.symbol);
     
     return (
       <div 
         key={item.symbol}
-        onClick={() => setSelectedSymbol(item.symbol)}
+        onClick={() => router.push(`/stock/${item.symbol}`)}
         className={`bg-content2/40 hover:bg-content2 transition-all p-4 rounded-2xl flex flex-col gap-3 border cursor-pointer ${
           isBuy ? 'border-emerald-500/20 hover:border-emerald-500/40' : 'border-danger/20 hover:border-danger/40'
         }`}
@@ -150,12 +149,6 @@ export default function RadarPage() {
         </>
       )}
 
-      <StockDetailDrawer 
-        isOpen={!!selectedSymbol}
-        onOpenChange={(open) => !open && setSelectedSymbol(null)}
-        symbol={selectedSymbol}
-        symbolsList={allSymbols}
-      />
       </div>
     </PullToRefresh>
   );

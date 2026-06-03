@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ChevronLeft, Plus, Search, ArrowUpDown } from "lucide-react";
-import StockDetailDrawer from "@/components/stock-detail-drawer";
 import StockSearchInput from "@/components/stock-search-input";
 import { TreemapHeatmap } from "@/components/treemap-heatmap";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
@@ -21,9 +20,6 @@ export default function WatchlistDetail() {
 
   const [watchlist, setWatchlist] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  
-  const [isOpen, setIsOpen] = useState(false);
-  const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -79,8 +75,7 @@ export default function WatchlistDetail() {
   };
 
   const openStockDetail = (sym: string) => {
-    setSelectedSymbol(sym);
-    setIsOpen(true);
+    router.push(`/stock/${sym}`);
   };
 
   const handleDragEnd = async (event: any) => {
@@ -242,13 +237,6 @@ export default function WatchlistDetail() {
           </DndContext>
         )}
       </div>
-
-      <StockDetailDrawer 
-        isOpen={isOpen} 
-        onOpenChange={setIsOpen} 
-        symbol={selectedSymbol}
-        symbolsList={symbolsList}
-      />
       </div>
     </PullToRefresh>
   );

@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { TrendingUp, Wallet, ArrowUpRight, ArrowDownRight } from "lucide-react";
-import StockDetailDrawer from "@/components/stock-detail-drawer";
 import { TreemapHeatmap } from "@/components/treemap-heatmap";
 import CompactStockRow from "@/components/compact-stock-row";
 import PullToRefresh from "@/components/pull-to-refresh";
@@ -19,9 +19,9 @@ interface PortfolioItem {
 }
 
 export default function PortfolioPage() {
+  const router = useRouter();
   const [items, setItems] = useState<PortfolioItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -167,7 +167,7 @@ export default function PortfolioPage() {
                   analysisData={analysisDict[item.symbol]}
                   ownedQuantity={item.quantity}
                   averagePrice={item.averagePrice}
-                  onPress={setSelectedSymbol}
+                  onPress={(sym) => router.push(`/stock/${sym}`)}
                   isPortfolioView={true}
                 />
               );
@@ -175,13 +175,6 @@ export default function PortfolioPage() {
           </div>
         )}
       </div>
-      
-      <StockDetailDrawer 
-        isOpen={!!selectedSymbol}
-        onOpenChange={(open) => !open && setSelectedSymbol(null)}
-        symbol={selectedSymbol}
-        symbolsList={mergedItems.map(i => i.symbol)}
-      />
       </div>
     </PullToRefresh>
   );
