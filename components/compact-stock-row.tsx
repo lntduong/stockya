@@ -52,11 +52,22 @@ export default function CompactStockRow({
     );
   }
 
-  // Price Info
-  const currentPrice = priceData?.price || averagePrice || 0;
-  const refPrice = priceData?.referencePrice || currentPrice;
-  const ceilPrice = priceData?.ceilingPrice || currentPrice;
-  const floorPrice = priceData?.floorPrice || currentPrice;
+  // Normalize prices to always be in thousands (e.g. 41.9 instead of 41900)
+  const rawCurrent = priceData?.price || 0;
+  const normalizedCurrentPrice = rawCurrent > 1000 ? rawCurrent / 1000 : rawCurrent;
+  const normalizedAveragePrice = averagePrice ? (averagePrice > 1000 ? averagePrice / 1000 : averagePrice) : 0;
+  
+  const currentPriceToUse = normalizedCurrentPrice || normalizedAveragePrice;
+  
+  const rawRef = priceData?.referencePrice || 0;
+  const refPrice = rawRef > 1000 ? rawRef / 1000 : (rawRef || currentPriceToUse);
+  
+  const rawCeil = priceData?.ceilingPrice || 0;
+  const ceilPrice = rawCeil > 1000 ? rawCeil / 1000 : (rawCeil || currentPriceToUse);
+  
+  const rawFloor = priceData?.floorPrice || 0;
+  const floorPrice = rawFloor > 1000 ? rawFloor / 1000 : (rawFloor || currentPriceToUse);
+  
   const percentChange = priceData?.percentChange || 0;
 
   const getPriceColor = (price: number) => {
@@ -67,7 +78,7 @@ export default function CompactStockRow({
     return "text-warning-500";
   };
 
-  const priceColor = getPriceColor(currentPrice);
+  const priceColor = getPriceColor(currentPriceToUse);
   const isUp = percentChange > 0;
   const isDown = percentChange < 0;
 
@@ -78,10 +89,19 @@ export default function CompactStockRow({
   // Portfolio PnL Info
   let pnl = 0;
   let pnlPercent = 0;
-  if (ownedQuantity && averagePrice) {
-    pnl = (currentPrice - averagePrice) * ownedQuantity;
-    pnlPercent = ((currentPrice - averagePrice) / averagePrice) * 100;
+  let totalCostValue = 0;
+  if (ownedQuantity && normalizedAveragePrice) {
+    pnl = (currentPriceToUse - normalizedAveragePrice) * ownedQuantity * 1000;
+    pnlPercent = ((currentPriceToUse - normalizedAveragePrice) / normalizedAveragePrice) * 100;
+    totalCostValue = ownedQuantity * normalizedAveragePrice * 1000;
   }
+
+  const formatPrice = (p: number) => p.toLocaleString('en-US', { maximumFractionDigits: 2 });
+  const formatValue = (v: number) => {
+    if (v >= 1000000000) return (v / 1000000000).toLocaleString('en-US', { maximumFractionDigits: 2 }) + ' tỷ';
+    if (v >= 1000000) return (v / 1000000).toLocaleString('en-US', { maximumFractionDigits: 2 }) + ' tr';
+    return v.toLocaleString('en-US', { maximumFractionDigits: 0 });
+  };
 
   return (
     <div 
@@ -99,13 +119,18 @@ export default function CompactStockRow({
           )}
         </div>
         
-        {ownedQuantity && averagePrice ? (
-          <div className="mt-0.5 flex items-center gap-1">
-            <span className="text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded font-bold">
-              {ownedQuantity.toLocaleString()} cổ
-            </span>
-            <span className={`text-[10px] font-bold ${pnl > 0 ? 'text-emerald-500' : pnl < 0 ? 'text-danger-500' : 'text-default-500'}`}>
-              {pnl > 0 ? '+' : ''}{pnlPercent.toFixed(1)}%
+        {ownedQuantity && normalizedAveragePrice ? (
+          <div className="mt-0.5 flex flex-col gap-0.5">
+            <div className="flex items-center gap-1">
+              <span className="text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded font-bold">
+                {ownedQuantity.toLocaleString()} cổ
+              </span>
+              <span className={`text-[10px] font-bold ${pnl > 0 ? 'text-emerald-500' : pnl < 0 ? 'text-danger-500' : 'text-default-500'}`}>
+                {pnl > 0 ? '+' : ''}{pnlPercent.toFixed(1)}%
+              </span>
+            </div>
+            <span className="text-[9px] text-default-500 font-medium px-0.5">
+              Vốn: {formatPrice(normalizedAveragePrice)} ({formatValue(totalCostValue)})
             </span>
           </div>
         ) : (
@@ -142,7 +167,7 @@ export default function CompactStockRow({
       <div className="flex items-center gap-2 w-24 justify-end">
         <div className="flex flex-col items-end">
           <span className={`font-black text-base ${priceColor}`}>
-            {(currentPrice / (isPortfolioView ? 1 : 1000)).toFixed(2)}
+            {formatPrice(currentPriceToUse)}
           </span>
           <div className={`text-[10px] font-bold px-1.5 rounded-sm mt-0.5 ${
             isUp ? 'bg-emerald-500/15 text-emerald-500' : 
