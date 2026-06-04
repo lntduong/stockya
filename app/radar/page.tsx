@@ -5,6 +5,7 @@ import useSWR, { mutate } from 'swr';
 import { useRouter } from "next/navigation";
 import { Radar, TrendingUp, TrendingDown, Clock, AlertTriangle } from "lucide-react";
 import PullToRefresh from "@/components/pull-to-refresh";
+import AnalysisCard from "@/components/analysis-card";
 
 const fetcher = (url: string) => fetch(url).then(res => res.json());
 
@@ -23,51 +24,14 @@ export default function RadarPage() {
     
     return (
       <div 
-        key={item.symbol}
-        onClick={() => router.push(`/stock/${item.symbol}`)}
-        className={`bg-content2/40 hover:bg-content2 transition-all p-4 rounded-2xl flex flex-col gap-3 border cursor-pointer ${
-          isBuy ? 'border-emerald-500/20 hover:border-emerald-500/40' : 'border-danger/20 hover:border-danger/40'
-        }`}
+         key={item.symbol} 
+         className={`rounded-[1.6rem] border-2 shadow-lg ${isBuy ? 'border-emerald-500/30' : 'border-danger-500/30'}`}
       >
-        <div className="flex justify-between items-start">
-          <div>
-            <span className="font-black text-xl tracking-tight">{item.symbol}</span>
-            <div className="flex items-center gap-1.5 mt-1">
-              <div className={`px-2 py-0.5 rounded-lg text-xs font-bold ${
-                isBuy ? 'bg-emerald-500/20 text-emerald-500' : 'bg-danger/20 text-danger-500'
-              }`}>
-                {item.score > 0 ? '+' : ''}{item.score}/10
-              </div>
-              <span className="text-xs text-default-500 font-medium">{item.action}</span>
-            </div>
-          </div>
-          <div className="text-right">
-            <span className="font-bold text-lg">{item.currentPrice.toLocaleString()}</span>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-2 mt-1">
-          <div className="flex flex-col">
-            <span className="text-[10px] text-default-500 uppercase font-bold">Xu hướng</span>
-            <span className={`text-xs font-medium ${item.trend.includes('UP') ? 'text-emerald-500' : item.trend.includes('DOWN') ? 'text-danger-500' : 'text-default-500'}`}>
-              {item.trendText}
-            </span>
-          </div>
-          <div className="flex flex-col">
-            <span className="text-[10px] text-default-500 uppercase font-bold">Dòng tiền</span>
-            <span className={`text-xs font-medium ${item.vsaState === 'ACCUMULATION' ? 'text-emerald-500' : item.vsaState === 'DISTRIBUTION' ? 'text-danger-500' : 'text-default-500'}`}>
-              {item.vsaText}
-            </span>
-          </div>
-        </div>
-
-        {ownedStock && (
-          <div className="mt-1 flex">
-            <div className="text-[10px] bg-primary/20 text-primary px-2 py-1 rounded-md font-bold flex items-center gap-1 w-fit">
-              👜 Bạn đang giữ {ownedStock.quantity.toLocaleString()} cổ (Giá vốn: {ownedStock.averagePrice.toLocaleString()})
-            </div>
-          </div>
-        )}
+         <AnalysisCard
+            item={item}
+            ownedStock={ownedStock}
+            onPress={(sym) => router.push(`/stock/${sym}`)}
+         />
       </div>
     );
   };
