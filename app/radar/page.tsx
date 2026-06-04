@@ -28,7 +28,7 @@ export default function RadarPage() {
       <div key={item.symbol} className="relative mt-2">
          {/* Rank Badge */}
          <div className={`absolute -top-3 -left-3 w-8 h-8 flex items-center justify-center rounded-full text-white font-black z-10 shadow-lg border-2 border-background ${
-            isBuy ? 'bg-emerald-500' : 'bg-danger-500'
+            isBuy ? 'bg-emerald-500' : 'bg-danger'
          }`}>
             #{index + 1}
          </div>
