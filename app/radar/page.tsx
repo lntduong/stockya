@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import useSWR, { mutate } from 'swr';
 import { useRouter } from "next/navigation";
-import { Radar, TrendingUp, TrendingDown, Clock, AlertTriangle } from "lucide-react";
+import { Radar, TrendingUp, TrendingDown, Clock, AlertTriangle, Search, Loader2 } from "lucide-react";
 import PullToRefresh from "@/components/pull-to-refresh";
 import AnalysisCard from "@/components/analysis-card";
 
@@ -13,6 +13,16 @@ export default function RadarPage() {
   const router = useRouter();
   const [tab, setTab] = useState<'buy' | 'sell'>('buy');
   
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchQuery.toUpperCase().trim());
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
+
   const { data, error, isLoading } = useSWR('/api/radar', fetcher, {
     refreshInterval: 60000, // Refresh every minute
     revalidateOnFocus: true
@@ -20,6 +30,11 @@ export default function RadarPage() {
 
   const { data: portfolioData } = useSWR('/api/portfolio', fetcher);
   const portfolioItems = portfolioData?.data || [];
+
+  const { data: searchAnalysisData, isLoading: isSearchingAnalysis } = useSWR(
+    debouncedSearch ? `/api/analysis?symbols=${debouncedSearch}` : null,
+    fetcher
+  );
 
   const renderStockCard = (item: any, isBuy: boolean, index: number) => {
     const ownedStock = portfolioItems.find((i: any) => i.symbol === item.symbol);
@@ -58,12 +73,44 @@ export default function RadarPage() {
           <Radar className="text-fuchsia-500 relative z-10 animate-spin-slow" size={28} />
         </div>
         <div>
-          <h1 className="text-2xl font-black tracking-tight">Radar Quét</h1>
-          <p className="text-sm text-default-500 font-medium">Tự động phát hiện tín hiệu</p>
+          <h1 className="text-2xl font-black tracking-tight">Khám phá</h1>
+          <p className="text-sm text-default-500 font-medium">Radar tín hiệu & Phân tích</p>
         </div>
       </div>
 
-      {isLoading ? (
+      {/* Search Input */}
+      <div className="relative">
+        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <Search size={18} className="text-default-400" />
+        </div>
+        <input
+          type="text"
+          placeholder="Tìm sức mạnh cổ phiếu... (VD: VNM)"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full bg-content2/50 border border-white/5 rounded-2xl pl-10 pr-10 py-3 text-sm outline-none focus:border-fuchsia-500 transition-colors uppercase font-bold"
+        />
+        {isSearchingAnalysis && (
+          <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+             <Loader2 size={16} className="text-fuchsia-500 animate-spin" />
+          </div>
+        )}
+      </div>
+
+      {/* Search Result */}
+      {debouncedSearch && searchAnalysisData?.data?.[0] ? (
+        <div className="flex flex-col gap-3 mb-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
+           <div className="flex items-center gap-2 px-1">
+             <Search className="text-fuchsia-500" size={18} />
+             <h3 className="font-extrabold text-sm tracking-wide text-fuchsia-500">KẾT QUẢ TÌM KIẾM</h3>
+           </div>
+           <AnalysisCard 
+              item={searchAnalysisData.data[0]}
+              ownedStock={portfolioItems.find((i: any) => i.symbol === searchAnalysisData.data[0].symbol)}
+              onPress={(sym) => router.push(`/stock/${sym}`)}
+           />
+        </div>
+      ) : isLoading ? (
         <div className="flex flex-col items-center justify-center py-20 gap-4">
           <Radar size={48} className="text-fuchsia-500 animate-ping opacity-50" />
           <p className="text-default-500 font-medium">Đang quét TOP 50 mã cổ phiếu...</p>

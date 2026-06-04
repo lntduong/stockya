@@ -1,6 +1,9 @@
 "use client";
 
-import { TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { 
+  TrendingUp, TrendingDown, Minus, 
+  BarChart3, Activity, Waves, LineChart, Cloud, GitCommit, Database, CandlestickChart
+} from "lucide-react";
 
 interface AnalysisCardProps {
   item: any;
@@ -116,8 +119,8 @@ export default function AnalysisCard({ item, ownedStock, onPress }: AnalysisCard
 
           {/* Candlestick */}
           <div className="bg-content1/50 p-3 rounded-xl flex flex-col gap-1">
-            <div className="flex items-center gap-2">
-              <span className="text-lg leading-none">🕯️</span>
+            <div className="flex items-center gap-1.5">
+              <CandlestickChart className="text-default-400" size={16} />
               <span className="text-[10px] font-bold text-default-400 uppercase tracking-wider">
                 Mô hình nến
               </span>
@@ -135,120 +138,71 @@ export default function AnalysisCard({ item, ownedStock, onPress }: AnalysisCard
       {/* Technical Indicators Grid */}
       <div className="grid grid-cols-2 gap-2 mt-1">
         <div className="bg-content1/50 rounded-xl p-3 flex flex-col gap-1">
-          <span className="text-[10px] font-bold text-default-400 uppercase tracking-wider">
-            MACD Động lượng
-          </span>
-          <span
-            className={`text-sm font-bold ${
-              item.macdState === "BULLISH"
-                ? "text-emerald-500"
-                : item.macdState === "BEARISH"
-                  ? "text-danger-500"
-                  : "text-default-500"
-            }`}
-          >
+          <div className="flex items-center gap-1.5">
+            <Activity className="text-default-400" size={14} />
+            <span className="text-[9px] font-bold text-default-400 uppercase tracking-wider">MACD</span>
+          </div>
+          <span className={`text-xs font-bold leading-tight ${item.macdState === "BULLISH" ? "text-emerald-500" : item.macdState === "BEARISH" ? "text-danger-500" : "text-default-500"}`}>
             {item.macdText}
           </span>
         </div>
 
         <div className="bg-content1/50 rounded-xl p-3 flex flex-col gap-1">
-          <span className="text-[10px] font-bold text-default-400 uppercase tracking-wider">
-            Bollinger Bands
-          </span>
-          <span
-            className={`text-sm font-bold ${
-              item.bbState === "LOWER_BAND"
-                ? "text-emerald-500"
-                : item.bbState === "UPPER_BAND"
-                  ? "text-danger-500"
-                  : "text-default-500"
-            }`}
-          >
+          <div className="flex items-center gap-1.5">
+            <Waves className="text-default-400" size={14} />
+            <span className="text-[9px] font-bold text-default-400 uppercase tracking-wider">Bollinger</span>
+          </div>
+          <span className={`text-xs font-bold leading-tight ${item.bbState === "LOWER_BAND" ? "text-emerald-500" : item.bbState === "UPPER_BAND" ? "text-danger-500" : "text-default-500"}`}>
             {item.bbText}
           </span>
         </div>
 
         <div className="bg-content1/50 rounded-xl p-3 flex flex-col gap-1">
-          <span className="text-[10px] font-bold text-default-400 uppercase tracking-wider">
-            VSA Dòng tiền
-          </span>
-          <span
-            className={`text-sm font-bold ${
-              item.vsaState === "ACCUMULATION"
-                ? "text-emerald-500"
-                : item.vsaState === "DISTRIBUTION"
-                  ? "text-danger-500"
-                  : "text-default-500"
-            }`}
-          >
+          <div className="flex items-center gap-1.5">
+            <BarChart3 className="text-default-400" size={14} />
+            <span className="text-[9px] font-bold text-default-400 uppercase tracking-wider">Dòng tiền VSA</span>
+          </div>
+          <span className={`text-xs font-bold leading-tight ${item.vsaState === "ACCUMULATION" ? "text-emerald-500" : item.vsaState === "DISTRIBUTION" ? "text-danger-500" : "text-default-500"}`}>
             {item.vsaText}
           </span>
         </div>
 
         <div className="bg-content1/50 rounded-xl p-3 flex flex-col gap-1">
-          <span className="text-[10px] font-bold text-default-400 uppercase tracking-wider">
-            RSI ({item.rsi?.toFixed(0)})
-          </span>
-          <span
-            className={`text-sm font-bold ${
-              item.rsiState === "OVERSOLD"
-                ? "text-emerald-500"
-                : item.rsiState === "OVERBOUGHT"
-                  ? "text-warning-500"
-                  : "text-default-500"
-            }`}
-          >
+          <div className="flex items-center gap-1.5">
+            <LineChart className="text-default-400" size={14} />
+            <span className="text-[9px] font-bold text-default-400 uppercase tracking-wider">RSI ({item.rsi?.toFixed(0)})</span>
+          </div>
+          <span className={`text-xs font-bold leading-tight ${item.rsiState === "OVERSOLD" ? "text-emerald-500" : item.rsiState === "OVERBOUGHT" ? "text-warning-500" : "text-default-500"}`}>
             {item.rsiText}
           </span>
         </div>
 
         <div className="bg-content1/50 rounded-xl p-3 flex flex-col gap-1">
-          <span className="text-[10px] font-bold text-default-400 uppercase tracking-wider">
-            Mây Ichimoku
-          </span>
-          <span
-            className={`text-sm font-bold ${
-              item.ichimokuState === "BULLISH"
-                ? "text-emerald-500"
-                : item.ichimokuState === "BEARISH"
-                  ? "text-danger-500"
-                  : "text-default-500"
-            }`}
-          >
+          <div className="flex items-center gap-1.5">
+            <Cloud className="text-default-400" size={14} />
+            <span className="text-[9px] font-bold text-default-400 uppercase tracking-wider">Mây Ichimoku</span>
+          </div>
+          <span className={`text-xs font-bold leading-tight ${item.ichimokuState === "BULLISH" ? "text-emerald-500" : item.ichimokuState === "BEARISH" ? "text-danger-500" : "text-default-500"}`}>
             {item.ichimokuText}
           </span>
         </div>
 
         <div className="bg-content1/50 rounded-xl p-3 flex flex-col gap-1">
-          <span className="text-[10px] font-bold text-default-400 uppercase tracking-wider">
-            Stochastic ({item.stochK?.toFixed(0)})
-          </span>
-          <span
-            className={`text-sm font-bold ${
-              item.stochState === "OVERSOLD"
-                ? "text-emerald-500"
-                : item.stochState === "OVERBOUGHT"
-                  ? "text-warning-500"
-                  : "text-default-500"
-            }`}
-          >
+          <div className="flex items-center gap-1.5">
+            <GitCommit className="text-default-400" size={14} />
+            <span className="text-[9px] font-bold text-default-400 uppercase tracking-wider">Stochastic ({item.stochK?.toFixed(0)})</span>
+          </div>
+          <span className={`text-xs font-bold leading-tight ${item.stochState === "OVERSOLD" ? "text-emerald-500" : item.stochState === "OVERBOUGHT" ? "text-warning-500" : "text-default-500"}`}>
             {item.stochText}
           </span>
         </div>
 
         <div className="bg-content1/50 rounded-xl p-3 flex flex-col gap-1 col-span-2">
-          <span className="text-[10px] font-bold text-default-400 uppercase tracking-wider">
-            Dòng tiền OBV
-          </span>
-          <span
-            className={`text-sm font-bold ${
-              item.obvState === "BULLISH"
-                ? "text-emerald-500"
-                : item.obvState === "BEARISH"
-                  ? "text-danger-500"
-                  : "text-default-500"
-            }`}
-          >
+          <div className="flex items-center gap-1.5">
+            <Database className="text-default-400" size={14} />
+            <span className="text-[9px] font-bold text-default-400 uppercase tracking-wider">Dòng tiền OBV</span>
+          </div>
+          <span className={`text-xs font-bold leading-tight ${item.obvState === "BULLISH" ? "text-emerald-500" : item.obvState === "BEARISH" ? "text-danger-500" : "text-default-500"}`}>
             {item.obvText}
           </span>
         </div>
@@ -258,7 +212,7 @@ export default function AnalysisCard({ item, ownedStock, onPress }: AnalysisCard
       {item.entryPriceMin && item.entryPriceMax && (
         <div className="mt-2 bg-primary/10 p-3 rounded-xl flex flex-col gap-1 border border-primary/20">
            <span className="text-[10px] font-bold text-primary uppercase tracking-wider">Vùng mua hợp lý (Gợi ý)</span>
-           <span className="font-black text-primary text-sm">
+           <span className="font-black text-primary">
              {item.entryPriceMin.toFixed(2)} - {item.entryPriceMax.toFixed(2)}
            </span>
         </div>

@@ -108,7 +108,7 @@ export default function CompactStockRow({
   return (
     <div 
       onClick={() => onPress(symbol)} 
-      className="w-full bg-content2/40 hover:bg-content2 backdrop-blur-md border border-white/5 transition-all shadow-sm rounded-xl cursor-pointer p-3 flex flex-row items-center justify-between gap-2"
+      className="w-full bg-content2/40 hover:bg-content2 backdrop-blur-md border border-white/5 transition-all shadow-sm rounded-2xl cursor-pointer p-4 flex flex-row items-center justify-between gap-3"
     >
       {/* Left: Symbol & Ownership/Name */}
       <div className="flex-1 min-w-0 flex flex-col justify-center">
@@ -122,16 +122,16 @@ export default function CompactStockRow({
         </div>
         
         {ownedQuantity && normalizedAveragePrice ? (
-          <div className="mt-0.5 flex flex-col gap-0.5">
-            <div className="flex items-center gap-1">
-              <span className="text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded font-bold">
+          <div className="mt-1 flex flex-col gap-1">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[11px] bg-primary/20 text-primary px-1.5 py-0.5 rounded font-bold">
                 {ownedQuantity.toLocaleString()} cổ
               </span>
-              <span className={`text-[10px] font-bold ${isUp ? 'text-emerald-500' : isDown ? 'text-danger' : 'text-default-500'}`}>
+              <span className={`text-[11px] font-bold ${isUp ? 'text-emerald-500' : isDown ? 'text-danger' : 'text-default-500'}`}>
                 {isUp ? '+' : ''}{percentChange}%
               </span>
             </div>
-            <span className="text-[9px] text-default-500 font-medium px-0.5">
+            <span className="text-[10px] text-default-500 font-medium px-0.5">
               Vốn: {formatPrice(normalizedAveragePrice)} ({formatValue(totalCostValue)})
             </span>
           </div>
@@ -172,12 +172,12 @@ export default function CompactStockRow({
             {formatPrice(currentPriceToUse)}
           </span>
           {ownedQuantity && normalizedAveragePrice ? (
-            <div className={`flex items-center gap-0.5 text-[10px] font-bold px-1.5 rounded-sm mt-0.5 ${
+            <div className={`flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md mt-1 ${
               pnl > 0 ? 'bg-emerald-500/15 text-emerald-500' : 
               pnl < 0 ? 'bg-danger/15 text-danger' : 
               'bg-default-500/15 text-default-500'
             }`}>
-              {pnl > 0 ? <TrendingUp size={10} /> : pnl < 0 ? <TrendingDown size={10} /> : <Minus size={10} />}
+              {pnl > 0 ? <TrendingUp size={12} /> : pnl < 0 ? <TrendingDown size={12} /> : <Minus size={12} />}
               <span>{pnl > 0 ? '+' : ''}{pnlPercent.toFixed(2)}% ({formatValue(Math.abs(pnl))})</span>
             </div>
           ) : (

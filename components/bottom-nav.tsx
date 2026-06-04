@@ -17,21 +17,14 @@ export default function BottomNav() {
           <LineChart size={24} strokeWidth={pathname === '/' || pathname.startsWith('/watchlist') ? 2.5 : 2} />
           <span className="text-[10px] font-bold">Thị trường</span>
         </Link>
-        
-        <Link 
-          href="/analysis"
-          className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${pathname.startsWith('/analysis') ? 'text-primary' : 'text-default-500 hover:text-default-800 dark:hover:text-default-300'}`}
-        >
-          <Activity size={24} strokeWidth={pathname.startsWith('/analysis') ? 2.5 : 2} />
-          <span className="text-[10px] font-bold">Phân tích</span>
-        </Link>
+
         
         <Link 
           href="/radar"
           className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${pathname.startsWith('/radar') ? 'text-primary' : 'text-default-500 hover:text-default-800 dark:hover:text-default-300'}`}
         >
           <Radar size={24} strokeWidth={pathname.startsWith('/radar') ? 2.5 : 2} />
-          <span className="text-[10px] font-bold">Radar</span>
+          <span className="text-[10px] font-bold">Khám phá</span>
         </Link>
         
         <Link 
