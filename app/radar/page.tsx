@@ -11,6 +11,8 @@ const fetcher = (url: string) => fetch(url).then(res => res.json());
 
 export default function RadarPage() {
   const router = useRouter();
+  const [tab, setTab] = useState<'buy' | 'sell'>('buy');
+  
   const { data, error, isLoading } = useSWR('/api/radar', fetcher, {
     refreshInterval: 60000, // Refresh every minute
     revalidateOnFocus: true
@@ -19,19 +21,25 @@ export default function RadarPage() {
   const { data: portfolioData } = useSWR('/api/portfolio', fetcher);
   const portfolioItems = portfolioData?.data || [];
 
-  const renderStockCard = (item: any, isBuy: boolean) => {
+  const renderStockCard = (item: any, isBuy: boolean, index: number) => {
     const ownedStock = portfolioItems.find((i: any) => i.symbol === item.symbol);
     
     return (
-      <div 
-         key={item.symbol} 
-         className={`rounded-[1.6rem] border-2 shadow-lg ${isBuy ? 'border-emerald-500/30' : 'border-danger-500/30'}`}
-      >
-         <AnalysisCard
-            item={item}
-            ownedStock={ownedStock}
-            onPress={(sym) => router.push(`/stock/${sym}`)}
-         />
+      <div key={item.symbol} className="relative mt-2">
+         {/* Rank Badge */}
+         <div className={`absolute -top-3 -left-3 w-8 h-8 flex items-center justify-center rounded-full text-white font-black z-10 shadow-lg border-2 border-background ${
+            isBuy ? 'bg-emerald-500' : 'bg-danger-500'
+         }`}>
+            #{index + 1}
+         </div>
+         
+         <div className={`rounded-[1.6rem] border-2 shadow-lg ${isBuy ? 'border-emerald-500/30' : 'border-danger-500/30'}`}>
+            <AnalysisCard
+               item={item}
+               ownedStock={ownedStock}
+               onPress={(sym) => router.push(`/stock/${sym}`)}
+            />
+         </div>
       </div>
     );
   };
@@ -77,39 +85,63 @@ export default function RadarPage() {
             </span>
           </div>
 
-          <div className="flex flex-col gap-4 mt-2">
-            <div className="flex items-center gap-2 px-1">
-              <TrendingUp className="text-emerald-500" size={24} />
-              <h2 className="text-xl font-black tracking-tight">CƠ HỘI MUA (Score ≥ 4)</h2>
+          {/* Tabs */}
+          <div className="flex gap-2">
+            <div className="flex-1 flex bg-content2/50 p-1.5 rounded-2xl border border-white/5">
+              <button
+                onClick={() => setTab("buy")}
+                className={`flex-1 py-3 rounded-xl flex items-center justify-center gap-2 transition-all ${tab === "buy" ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/20" : "text-default-500 hover:bg-content3"}`}
+              >
+                <TrendingUp size={20} />
+                <span className="font-bold hidden sm:inline">CƠ HỘI MUA</span>
+              </button>
+              <button
+                onClick={() => setTab("sell")}
+                className={`flex-1 py-3 rounded-xl flex items-center justify-center gap-2 transition-all ${tab === "sell" ? "bg-danger text-white shadow-md shadow-danger/20" : "text-default-500 hover:bg-content3"}`}
+              >
+                <TrendingDown size={20} />
+                <span className="font-bold hidden sm:inline">CẢNH BÁO BÁN</span>
+              </button>
             </div>
-            
-            {data?.data?.buy?.length === 0 ? (
-              <div className="p-6 text-center border border-dashed border-white/10 rounded-2xl text-default-500 text-sm">
-                Không có tín hiệu MUA rõ ràng nào lúc này.
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 gap-3">
-                {data?.data?.buy?.map((item: any) => renderStockCard(item, true))}
-              </div>
-            )}
           </div>
 
-          <div className="flex flex-col gap-4 mt-6">
-            <div className="flex items-center gap-2 px-1">
-              <TrendingDown className="text-danger-500" size={24} />
-              <h2 className="text-xl font-black tracking-tight">CẢNH BÁO BÁN (Score ≤ -4)</h2>
+          {tab === "buy" && (
+            <div className="flex flex-col gap-4 mt-2">
+              <div className="flex items-center gap-2 px-1">
+                <TrendingUp className="text-emerald-500" size={24} />
+                <h2 className="text-xl font-black tracking-tight">CƠ HỘI MUA (Score ≥ 4)</h2>
+              </div>
+              
+              {data?.data?.buy?.length === 0 ? (
+                <div className="p-6 text-center border border-dashed border-white/10 rounded-2xl text-default-500 text-sm">
+                  Không có tín hiệu MUA rõ ràng nào lúc này.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-4">
+                  {data?.data?.buy?.map((item: any, index: number) => renderStockCard(item, true, index))}
+                </div>
+              )}
             </div>
-            
-            {data?.data?.sell?.length === 0 ? (
-              <div className="p-6 text-center border border-dashed border-white/10 rounded-2xl text-default-500 text-sm">
-                Không có tín hiệu BÁN rõ ràng nào lúc này.
+          )}
+
+          {tab === "sell" && (
+            <div className="flex flex-col gap-4 mt-2">
+              <div className="flex items-center gap-2 px-1">
+                <TrendingDown className="text-danger-500" size={24} />
+                <h2 className="text-xl font-black tracking-tight">CẢNH BÁO BÁN (Score ≤ -4)</h2>
               </div>
-            ) : (
-              <div className="grid grid-cols-1 gap-3">
-                {data?.data?.sell?.map((item: any) => renderStockCard(item, false))}
-              </div>
-            )}
-          </div>
+              
+              {data?.data?.sell?.length === 0 ? (
+                <div className="p-6 text-center border border-dashed border-white/10 rounded-2xl text-default-500 text-sm">
+                  Không có tín hiệu BÁN rõ ràng nào lúc này.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-4">
+                  {data?.data?.sell?.map((item: any, index: number) => renderStockCard(item, false, index))}
+                </div>
+              )}
+            </div>
+          )}
         </>
       )}
 
