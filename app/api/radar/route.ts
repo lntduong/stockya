@@ -27,18 +27,23 @@ export async function GET() {
             getStockHistory(symbol, startDate, endDate)
           ]);
           
-          const prices = historyRes.map(h => h.close);
+          const opens = historyRes.map(h => h.open);
+          const highs = historyRes.map(h => h.high);
+          const lows = historyRes.map(h => h.low);
+          const closes = historyRes.map(h => h.close);
           const volumes = historyRes.map(h => h.volume);
           const currentPrice = overviewRes.price; 
           const currentVolume = overviewRes.volume;
           
-          const result = analyzeTrend(symbol, prices, volumes, currentPrice, currentVolume);
+          const result = analyzeTrend(symbol, opens, highs, lows, closes, volumes, currentPrice, currentVolume);
           
           return {
             ...result,
             currentPrice: currentPrice / 1000,
             sma20: result.sma20 ? result.sma20 / 1000 : null,
             sma50: result.sma50 ? result.sma50 / 1000 : null,
+            stopLossPrice: result.stopLossPrice ? result.stopLossPrice / 1000 : null,
+            takeProfitPrice: result.takeProfitPrice ? result.takeProfitPrice / 1000 : null,
           };
         } catch (err) {
           console.error(`Error scanning ${symbol}`, err);

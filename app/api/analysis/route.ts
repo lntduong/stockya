@@ -23,19 +23,17 @@ export async function GET(request: Request) {
           getStockHistory(symbol, startDate, endDate)
         ]);
         
-        // Let's use history directly. history prices need to be scaled if overview is scaled.
-        // Actually, getStockHistory returns raw prices.
-        const prices = historyRes.map(h => h.close);
+        const opens = historyRes.map(h => h.open);
+        const highs = historyRes.map(h => h.high);
+        const lows = historyRes.map(h => h.low);
+        const closes = historyRes.map(h => h.close);
         const volumes = historyRes.map(h => h.volume);
-        const currentPriceRaw = overviewRes.price / 1000;
         
-        // Ensure historical prices are on the same scale (Yahoo VN stocks are usually in thousands, so 25000)
-        // Wait, getStockHistory returns 25000. currentPriceRaw is 25.75 (if divided by 1000).
         // Let's NOT divide overview.price by 1000 for analysis to match history!
         const currentPrice = overviewRes.price; 
         const currentVolume = overviewRes.volume;
         
-        const result = analyzeTrend(symbol, prices, volumes, currentPrice, currentVolume);
+        const result = analyzeTrend(symbol, opens, highs, lows, closes, volumes, currentPrice, currentVolume);
         
         // Format prices back to UI friendly format (divided by 1000)
         return {
@@ -43,6 +41,8 @@ export async function GET(request: Request) {
           currentPrice: currentPrice / 1000,
           sma20: result.sma20 ? result.sma20 / 1000 : null,
           sma50: result.sma50 ? result.sma50 / 1000 : null,
+          stopLossPrice: result.stopLossPrice ? result.stopLossPrice / 1000 : null,
+          takeProfitPrice: result.takeProfitPrice ? result.takeProfitPrice / 1000 : null,
         };
       } catch (err) {
         console.error(`Error analyzing ${symbol}`, err);

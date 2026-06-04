@@ -94,30 +94,42 @@ export default function AnalysisCard({ item, ownedStock, onPress }: AnalysisCard
         </div>
       </div>
 
-      {/* Trend Analysis (SMA) */}
+      {/* Trend Analysis (SMA) & Candlestick */}
       <div className="flex flex-col gap-2 mt-2">
-        <div className="flex items-center gap-2">
-          {item.trend?.includes("UP") ? (
-            <TrendingUp
-              className="text-emerald-500"
-              size={18}
-            />
-          ) : item.trend?.includes("DOWN") ? (
-            <TrendingDown
-              className="text-danger-500"
-              size={18}
-            />
-          ) : (
-            <Minus className="text-default-400" size={18} />
-          )}
-          <span className="font-bold text-sm">
-            Xu hướng: {item.trendText}
-          </span>
+        <div className="grid grid-cols-2 gap-2">
+          {/* Trend */}
+          <div className="bg-content1/50 p-3 rounded-xl flex flex-col gap-1">
+            <div className="flex items-center gap-2">
+              {item.trend?.includes("UP") ? (
+                <TrendingUp className="text-emerald-500" size={16} />
+              ) : item.trend?.includes("DOWN") ? (
+                <TrendingDown className="text-danger-500" size={16} />
+              ) : (
+                <Minus className="text-default-400" size={16} />
+              )}
+              <span className="text-[10px] font-bold text-default-400 uppercase tracking-wider">
+                Xu hướng
+              </span>
+            </div>
+            <span className="font-bold text-sm">{item.trendText}</span>
+          </div>
+
+          {/* Candlestick */}
+          <div className="bg-content1/50 p-3 rounded-xl flex flex-col gap-1">
+            <div className="flex items-center gap-2">
+              <span className="text-lg leading-none">🕯️</span>
+              <span className="text-[10px] font-bold text-default-400 uppercase tracking-wider">
+                Mô hình nến
+              </span>
+            </div>
+            <span className={`font-bold text-sm ${
+              item.candleState === "BULLISH" ? "text-emerald-500" :
+              item.candleState === "BEARISH" ? "text-danger-500" : "text-default-500"
+            }`}>
+              {item.candleName}
+            </span>
+          </div>
         </div>
-        <p className="text-xs text-default-400 leading-relaxed bg-content1/50 p-3 rounded-xl">
-          {item.trendDesc} (SMA20: {item.sma20?.toFixed(2)},
-          SMA50: {item.sma50?.toFixed(2)})
-        </p>
       </div>
 
       {/* Technical Indicators Grid */}
@@ -189,7 +201,72 @@ export default function AnalysisCard({ item, ownedStock, onPress }: AnalysisCard
             {item.rsiText}
           </span>
         </div>
+
+        <div className="bg-content1/50 rounded-xl p-3 flex flex-col gap-1">
+          <span className="text-[10px] font-bold text-default-400 uppercase tracking-wider">
+            Mây Ichimoku
+          </span>
+          <span
+            className={`text-sm font-bold ${
+              item.ichimokuState === "BULLISH"
+                ? "text-emerald-500"
+                : item.ichimokuState === "BEARISH"
+                  ? "text-danger-500"
+                  : "text-default-500"
+            }`}
+          >
+            {item.ichimokuText}
+          </span>
+        </div>
+
+        <div className="bg-content1/50 rounded-xl p-3 flex flex-col gap-1">
+          <span className="text-[10px] font-bold text-default-400 uppercase tracking-wider">
+            Stochastic ({item.stochK?.toFixed(0)})
+          </span>
+          <span
+            className={`text-sm font-bold ${
+              item.stochState === "OVERSOLD"
+                ? "text-emerald-500"
+                : item.stochState === "OVERBOUGHT"
+                  ? "text-warning-500"
+                  : "text-default-500"
+            }`}
+          >
+            {item.stochText}
+          </span>
+        </div>
+
+        <div className="bg-content1/50 rounded-xl p-3 flex flex-col gap-1 col-span-2">
+          <span className="text-[10px] font-bold text-default-400 uppercase tracking-wider">
+            Dòng tiền OBV
+          </span>
+          <span
+            className={`text-sm font-bold ${
+              item.obvState === "BULLISH"
+                ? "text-emerald-500"
+                : item.obvState === "BEARISH"
+                  ? "text-danger-500"
+                  : "text-default-500"
+            }`}
+          >
+            {item.obvText}
+          </span>
+        </div>
       </div>
+
+      {/* ATR Stop Loss / Take Profit */}
+      {item.stopLossPrice && item.takeProfitPrice && (
+        <div className="flex gap-2 mt-2">
+           <div className="flex-1 bg-danger/10 p-3 rounded-xl flex flex-col gap-1 border border-danger/20">
+              <span className="text-[10px] font-bold text-danger-500 uppercase tracking-wider">Cắt lỗ (Gợi ý)</span>
+              <span className="font-black text-danger-500">{item.stopLossPrice.toFixed(2)}</span>
+           </div>
+           <div className="flex-1 bg-emerald-500/10 p-3 rounded-xl flex flex-col gap-1 border border-emerald-500/20">
+              <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-wider">Chốt lời (Gợi ý)</span>
+              <span className="font-black text-emerald-500">{item.takeProfitPrice.toFixed(2)}</span>
+           </div>
+        </div>
+      )}
 
       {ownedStock && (
         <div className="mt-1 flex">
