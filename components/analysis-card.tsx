@@ -254,7 +254,15 @@ export default function AnalysisCard({ item, ownedStock, onPress }: AnalysisCard
         </div>
       </div>
 
-      {/* ATR Stop Loss / Take Profit */}
+      {/* Trading Strategy: Entry, Stop Loss, Take Profit */}
+      {item.entryPriceMin && item.entryPriceMax && (
+        <div className="mt-2 bg-primary/10 p-3 rounded-xl flex flex-col gap-1 border border-primary/20">
+           <span className="text-[10px] font-bold text-primary uppercase tracking-wider">Vùng mua hợp lý (Gợi ý)</span>
+           <span className="font-black text-primary text-sm">
+             {item.entryPriceMin.toFixed(2)} - {item.entryPriceMax.toFixed(2)}
+           </span>
+        </div>
+      )}
       {item.stopLossPrice && item.takeProfitPrice && (
         <div className="flex gap-2 mt-2">
            <div className="flex-1 bg-danger/10 p-3 rounded-xl flex flex-col gap-1 border border-danger/20">

@@ -296,6 +296,8 @@ export interface AnalysisResult {
   obvText: string;
   
   atr: number | null;
+  entryPriceMin: number | null;
+  entryPriceMax: number | null;
   stopLossPrice: number | null;
   takeProfitPrice: number | null;
   
@@ -413,10 +415,27 @@ export function analyzeTrend(
   if (obv.state === 'BULLISH') rawScore += 2;
   else if (obv.state === 'BEARISH') rawScore -= 2;
 
-  // 10. ATR (Volatility)
+  // 10. ATR (Volatility) and Trading Setup
   const atr = calculateATR(allHighs, allLows, allCloses);
-  const stopLossPrice = atr ? currentPrice - (atr * 1.5) : null;
-  const takeProfitPrice = atr ? currentPrice + (atr * 2.0) : null;
+  
+  // Calculate Entry, Stop Loss, Take Profit
+  let entryPriceMin = null;
+  let entryPriceMax = null;
+  let stopLossPrice = null;
+  let takeProfitPrice = null;
+  
+  if (atr) {
+    stopLossPrice = currentPrice - (atr * 1.5);
+    takeProfitPrice = currentPrice + (atr * 2.0);
+    
+    // Gợi ý giá mua: Vùng từ SMA20 (hoặc Giá hiện tại trừ 0.5 ATR nếu thủng SMA) đến Giá hiện tại
+    entryPriceMax = currentPrice;
+    if (sma20 && currentPrice > sma20) {
+       entryPriceMin = sma20;
+    } else {
+       entryPriceMin = currentPrice - (atr * 0.5);
+    }
+  }
 
   // Normalize rawScore (-22 to +22 max possible) to a 10-point scale (-10 to +10)
   // Max realistic score is around 18. We'll divide by 1.8 and round.
@@ -462,6 +481,8 @@ export function analyzeTrend(
     obvState: obv.state,
     obvText: obv.text,
     atr,
+    entryPriceMin,
+    entryPriceMax,
     stopLossPrice,
     takeProfitPrice,
     action

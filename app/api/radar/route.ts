@@ -42,6 +42,8 @@ export async function GET() {
             currentPrice: currentPrice / 1000,
             sma20: result.sma20 ? result.sma20 / 1000 : null,
             sma50: result.sma50 ? result.sma50 / 1000 : null,
+            entryPriceMin: result.entryPriceMin ? result.entryPriceMin / 1000 : null,
+            entryPriceMax: result.entryPriceMax ? result.entryPriceMax / 1000 : null,
             stopLossPrice: result.stopLossPrice ? result.stopLossPrice / 1000 : null,
             takeProfitPrice: result.takeProfitPrice ? result.takeProfitPrice / 1000 : null,
           };
